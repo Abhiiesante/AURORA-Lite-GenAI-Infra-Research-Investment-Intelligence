@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 import axios from "axios";
 import { useState } from "react";
 

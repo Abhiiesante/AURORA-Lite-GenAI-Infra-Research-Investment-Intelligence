@@ -1,9 +1,10 @@
 "use client";
-import dynamic from "next/dynamic";
+export const dynamic = "force-dynamic";
+import dyn from "next/dynamic";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-const CytoscapeComponent = dynamic(() => import("react-cytoscapejs"), { ssr: false } as any) as any;
+const CytoscapeComponent = dyn(() => import("react-cytoscapejs"), { ssr: false } as any) as any;
 const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function PeoplePage() {

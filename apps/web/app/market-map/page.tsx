@@ -1,10 +1,10 @@
 "use client";
 /// <reference path="../../types/shims.d.ts" />
-import dynamic from "next/dynamic";
+import dyn from "next/dynamic";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const CytoscapeComponent = dynamic(() => import("react-cytoscapejs"), { ssr: false });
+const CytoscapeComponent = dyn(() => import("react-cytoscapejs"), { ssr: false });
 const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function MarketMap() {

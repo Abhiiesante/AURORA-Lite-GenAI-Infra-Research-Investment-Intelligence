@@ -1,9 +1,10 @@
 "use client";
-import dynamic from "next/dynamic";
+export const dynamic = "force-dynamic";
+import dyn from "next/dynamic";
 import { useState } from "react";
 import axios from "axios";
 
-const Plot = dynamic(() => import("react-plotly.js"), { ssr: false } as any) as any;
+const Plot = dyn(() => import("react-plotly.js"), { ssr: false } as any) as any;
 const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function ForecastPage() {
