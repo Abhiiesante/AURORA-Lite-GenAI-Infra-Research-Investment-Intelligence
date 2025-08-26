@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CompanyBrief",
+  "type": "object",
+  "properties": {
+    "company": {"type": "string"},
+    "summary": {"type": "string"},
+    "swot": {
+      "type": "object",
+      "properties": {
+        "strengths": {"type": "array", "items": {"type": "string"}},
+        "weaknesses": {"type": "array", "items": {"type": "string"}},
+        "opportunities": {"type": "array", "items": {"type": "string"}},
+        "threats": {"type": "array", "items": {"type": "string"}}
+      },
+      "required": ["strengths", "weaknesses", "opportunities", "threats"]
+    },
+    "five_forces": {"type": "object"},
+    "theses": {"type": "array", "items": {"type": "object"}},
+    "sources": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": ["company", "summary", "swot", "sources"]
+}

@@ -1,0 +1,11 @@
+version: 1
+profiles:
+  local:
+    description: Local dev schedules (opt-in)
+    cron:
+      hourly_rss: "0 * * * *"
+      daily_edgar: "0 2 * * *"
+      daily_github: "30 2 * * *"
+      daily_graph_sync: "0 3 * * *"
+notes:
+  - Use these as reference; trigger via your own Prefect setup or scripts.

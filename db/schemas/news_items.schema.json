@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "source",
+      "url",
+      "published_at",
+      "title",
+      "clean_text",
+      "company_ids",
+      "segment_tags",
+      "sentiment_score"
+    ],
+    "properties": {
+      "source": { "type": "string" },
+      "url": { "type": "string" },
+      "published_at": { "type": "string" },
+      "title": { "type": "string" },
+      "clean_text": { "type": "string" },
+      "company_ids": { "type": "array", "items": { "type": ["integer", "string"] } },
+      "segment_tags": { "type": "array", "items": { "type": "string" } },
+      "sentiment_score": { "type": "number" }
+    }
+  }
+}

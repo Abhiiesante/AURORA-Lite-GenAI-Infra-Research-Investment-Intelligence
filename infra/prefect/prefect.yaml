@@ -1,0 +1,14 @@
+# Minimal Prefect configuration example (optional)
+name: aurora-lite
+version: 1
+flows:
+  - name: daily_pipeline
+    entrypoint: infra/prefect/flows.py:daily_pipeline
+    schedule:
+      cron: "0 3 * * *"  # daily at 03:00
+      timezone: UTC
+work_pools:
+  - name: default-agent
+    # Configure a Prefect worker if you want to run on an agent
+    # type: process
+    # queues: [default]

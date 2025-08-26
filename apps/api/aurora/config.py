@@ -1,0 +1,51 @@
+from __future__ import annotations
+
+from typing import Optional
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    # Database
+    DATABASE_URL: str = "sqlite:///./aurora.db"
+
+    # CORS
+    allowed_origins: str = "*"
+
+    # Service URLs (lowercase properties to match existing code)
+    qdrant_url: Optional[str] = None
+    meili_url: Optional[str] = None
+    meili_master_key: Optional[str] = None
+    neo4j_url: Optional[str] = None
+    neo4j_user: Optional[str] = None
+    neo4j_password: Optional[str] = None
+    ollama_base_url: Optional[str] = None
+
+    # Auth/secrets
+    supabase_jwt_secret: str = ""
+    dev_admin_token: str = ""
+    sentry_dsn: Optional[str] = None
+
+    # Feature flags
+    rerank_enabled: bool = True
+    rate_limit_enabled: bool = False
+    rate_limit_per_minute: int = 120
+    citations_enforce: bool = True
+    alert_delta_threshold: float = 5.0
+    use_topic_modeling: bool = False  # M4: enable BERTopic pipeline
+    topic_refit_days: int = 7  # M4: days between topic refits
+    quality_checks_enabled: bool = True  # M8
+    use_lsh_dedup: bool = False  # M8: enable LSH-based dedup if library available
+    quality_min_text_length: int = 64  # M8: min content length
+
+    # Data locations (optional)
+    data_dir: Optional[str] = None
+    parquet_dir: Optional[str] = None
+
+    # Orchestration controls
+    use_prefect_flows: bool = False
+
+
+settings = Settings()

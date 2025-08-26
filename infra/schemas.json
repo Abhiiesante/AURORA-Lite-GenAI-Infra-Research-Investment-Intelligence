@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "Company": {
+    "type": "object",
+    "required": ["canonical_name"],
+    "properties": {
+      "canonical_name": {"type": "string"},
+      "aliases": {"type": "array", "items": {"type": "string"}},
+      "website": {"type": "string"},
+      "hq_country": {"type": "string"},
+      "headcount_est": {"type": "integer"},
+      "funding_total": {"type": "number"},
+      "last_round": {"type": "string"},
+      "last_round_date": {"type": "string", "format": "date"},
+      "repos": {"type": "array", "items": {"type": "string"}},
+      "sentiment_30": {"type": "number"},
+      "sentiment_90": {"type": "number"},
+      "sources": {"type": "array", "items": {"type": "string"}}
+    }
+  }
+}

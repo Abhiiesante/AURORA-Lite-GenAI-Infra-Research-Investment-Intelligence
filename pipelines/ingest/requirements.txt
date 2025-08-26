@@ -1,0 +1,5 @@
+prefect==2.20.8
+feedparser==6.0.11
+requests==2.32.3
+pydantic==2.8.2
+python-dotenv==1.0.1

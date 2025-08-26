@@ -1,0 +1,33 @@
+{
+  "name": "aurora-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+  "dev": "next dev -p 3000",
+  "build": "next build",
+  "start": "next start -p 3000",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "zustand": "4.5.2",
+  "@tanstack/react-query": "5.51.9",
+  "axios": "1.7.4",
+  "react-cytoscapejs": "2.0.0",
+  "cytoscape": "3.30.3",
+  "react-plotly.js": "2.6.0",
+  "plotly.js-dist-min": "2.35.2",
+  "jspdf": "2.5.1",
+  "html2canvas": "1.4.1"
+  },
+  "devDependencies": {
+    "typescript": "5.4.5",
+    "eslint": "8.57.0",
+    "eslint-config-next": "14.2.5",
+  "@types/node": "20.14.12",
+  "@types/react": "18.2.79",
+  "@types/react-dom": "18.2.25"
+  }
+}

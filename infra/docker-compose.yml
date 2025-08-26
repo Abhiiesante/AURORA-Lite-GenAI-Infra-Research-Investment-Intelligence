@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: aurora
+      POSTGRES_PASSWORD: aurora
+      POSTGRES_DB: aurora
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"    # REST
+      - "6334:6334"    # gRPC
+    volumes:
+      - qdrant-storage:/qdrant/storage
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.7
+    environment:
+      MEILI_NO_ANALYTICS: "true"
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili-data:/meili_data
+
+  neo4j:
+    image: neo4j:5-community
+    environment:
+      NEO4J_AUTH: neo4j/aurora
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j-data:/data
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+
+  api:
+    build: ../apps/api
+    depends_on:
+      - postgres
+      - qdrant
+      - meilisearch
+      - neo4j
+      - ollama
+    env_file:
+      - ../apps/api/.env.example
+    ports:
+      - "8000:8000"
+
+  ingest:
+    build: ../pipelines/ingest
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - pgdata:/data
+    command: ["python", "rss_flow.py"]
+
+  web:
+    build: ../apps/web
+    depends_on:
+      - api
+    env_file:
+      - ../apps/web/.env.example
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  qdrant-storage:
+  meili-data:
+  neo4j-data:
+  ollama:

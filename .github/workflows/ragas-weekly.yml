@@ -1,0 +1,37 @@
+name: ragas-weekly
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  ragas-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: apps/api/requirements.txt
+      - name: Install API deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/api/requirements.txt
+      - name: Run weekly RAG eval gates
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -e
+          if [ -z "${DATABASE_URL}" ]; then export DATABASE_URL="sqlite:///./aurora.db"; fi
+          python scripts/ci/run_ragas_ci.py | tee ragas_ci_output.txt
+      - name: Upload eval summary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ragas-ci-output
+          path: ragas_ci_output.txt
+      - name: Job summary
+        run: |
+          echo "### RAG eval weekly output" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          sed -n '1,200p' ragas_ci_output.txt >> $GITHUB_STEP_SUMMARY

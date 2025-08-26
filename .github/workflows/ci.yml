@@ -1,0 +1,70 @@
+name: ci
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aurora
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - run: corepack enable && corepack prepare pnpm@9.7.0 --activate
+      - run: pnpm install
+      - run: pnpm -r build
+      - name: Web Lint
+        run: |
+          cd apps/web
+          pnpm run lint
+      - name: Web Typecheck (tsc)
+        run: |
+          cd apps/web
+          npx tsc -v
+          npx tsc --noEmit
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Python deps for flows
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/api/requirements.txt
+          python -c "import jwt, strawberry; print('jwt/strawberry OK')"
+        env:
+          DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/aurora
+      - name: Python lint
+        run: |
+          pip install ruff black pytest
+          ruff --version
+      - name: Pytest (API unit tests)
+        run: |
+          pytest -q apps/api/tests
+        env:
+          DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/aurora
+      - name: Postgres smoke (seed and mirror)
+        run: |
+          python scripts/create_sample_data.py
+          python flows/mirror_companies_to_postgres.py
+        env:
+          DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/aurora
+      - name: Data contracts check (GE)
+        run: |
+          python scripts/create_sample_data.py
+          python flows/data_contracts_check.py
+      - name: Placeholder RAG eval (smoke)
+        run: |
+          python models/eval/rag_eval_stub.py

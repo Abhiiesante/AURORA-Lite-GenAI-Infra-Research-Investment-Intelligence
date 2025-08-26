@@ -1,0 +1,11 @@
+# Minimal Ragas config placeholder
+# Replace with actual dataset and pipeline if desired.
+faithfulness_threshold: 0.70
+questions:
+  - id: ex1
+    question: "What does ExampleAI build?"
+    context_urls:
+      - https://example.ai
+    expected_keywords:
+      - vector
+      - database

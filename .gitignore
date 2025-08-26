@@ -11,6 +11,8 @@
 # next.js
 /.next/
 /out/
+apps/**/.next/
+apps/**/out/
 
 # production
 /build
@@ -34,3 +36,24 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# data & local artifacts
+data/**
+!data/templates/**
+aurora.db
+
+# VS Code and OS
+.vscode/
+Thumbs.db
+
+# Prefect
+.prefect/

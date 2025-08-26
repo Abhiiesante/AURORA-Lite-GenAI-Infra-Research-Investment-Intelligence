@@ -1,0 +1,11 @@
+{
+  "name": "aurora-lite",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "packageManager": "pnpm@9.7.0",
+  "scripts": {
+    "dev": "pnpm --filter aurora-web dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint"
+  }
+}

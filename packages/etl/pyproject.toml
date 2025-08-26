@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "aurora-etl"
+version = "0.1.0"
+description = "Shared ETL utilities for AURORA-Lite"
+authors = ["AURORA Team <dev@example.com>"]
+packages = [ { include = "aurora_etl" } ]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pandas = "^2.2.2"
+duckdb = "^1.0.0"
+great-expectations = "^0.18.14"
+rapidfuzz = "^3.9.6"
+spacy = "^3.7.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
