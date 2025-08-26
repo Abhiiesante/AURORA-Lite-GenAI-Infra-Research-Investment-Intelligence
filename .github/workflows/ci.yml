@@ -39,8 +39,8 @@ jobs:
       - name: Web Typecheck (tsc)
         run: |
           cd apps/web
-          npx tsc -v
-          npx tsc --noEmit
+          pnpm exec tsc -v
+          pnpm exec tsc --noEmit
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
