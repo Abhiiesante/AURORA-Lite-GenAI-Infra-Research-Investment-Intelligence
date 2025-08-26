@@ -16,6 +16,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          # no pnpm cache here
+
+      - name: Setup pnpm (if needed for future steps)
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.7.0
+          run_install: false
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
