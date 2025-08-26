@@ -24,7 +24,12 @@ jobs:
         with:
           node-version: 20
           cache: 'pnpm'
-      - run: corepack enable && corepack prepare pnpm@9.7.0 --activate
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.7.0
+          run_install: false
+      - run: pnpm --version
       - run: pnpm install
       - run: pnpm -r build
       - name: Web Lint
