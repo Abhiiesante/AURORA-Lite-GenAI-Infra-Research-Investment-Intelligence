@@ -1,0 +1,35 @@
+name: smoke-observability
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: {}
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install API deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+        working-directory: apps/api
+      - name: Run observability smoke
+        env:
+          PYTHONUTF8: '1'
+        run: |
+          python - << 'PY'
+          from fastapi.testclient import TestClient
+          from apps.api.aurora.main import app
+          c = TestClient(app)
+          r1 = c.get('/metrics')
+          assert r1.status_code == 200 and '# HELP aurora_requests_total' in r1.text
+          r2 = c.get('/dev/metrics')
+          assert r2.status_code in (200,401)
+          print('metrics ok:', len(r1.text), 'dev:', r2.status_code)
+          PY
+        working-directory: .

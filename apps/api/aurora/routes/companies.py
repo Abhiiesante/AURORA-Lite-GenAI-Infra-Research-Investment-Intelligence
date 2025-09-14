@@ -25,7 +25,9 @@ class CompanyCreate(BaseModel):
 @router.post("/", response_model=Company)
 def upsert_company(payload: CompanyCreate):
     with get_session() as s:
-        existing = s.exec(select(Company).where(Company.canonical_name == payload.canonical_name)).first()
+        col = getattr(Company, "canonical_name")  # type: ignore[attr-defined]
+        rows = list(s.exec(select(Company).where(col == payload.canonical_name)))
+        existing = rows[0] if rows else None
         if existing:
             existing.website = payload.website or existing.website
             existing.hq_country = payload.hq_country or existing.hq_country
@@ -43,7 +45,8 @@ def upsert_company(payload: CompanyCreate):
                 "website": existing.website,
             }
             try:
-                meili.index("companies").add_documents([doc])
+                if meili:
+                    meili.index("companies").add_documents([doc])
             except Exception:
                 pass
             return existing
@@ -65,7 +68,8 @@ def upsert_company(payload: CompanyCreate):
                 "website": comp.website,
             }
             try:
-                meili.index("companies").add_documents([doc])
+                if meili:
+                    meili.index("companies").add_documents([doc])
             except Exception:
                 pass
             return comp

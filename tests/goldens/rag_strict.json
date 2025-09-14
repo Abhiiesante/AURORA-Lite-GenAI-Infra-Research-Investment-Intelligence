@@ -1,0 +1,12 @@
+[
+  {
+    "question": "Pinecone traction",
+    "allowed_domains": ["example.com"],
+    "min_valid": 1
+  },
+  {
+    "question": "Weaviate traction",
+    "allowed_domains": ["example.com"],
+    "min_valid": 1
+  }
+]

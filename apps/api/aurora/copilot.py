@@ -5,6 +5,7 @@ import time
 from pydantic import BaseModel
 from .db import get_session, Company, CopilotSession
 from .rag_models import ComparativeAnswer, ComparisonRow
+from sqlalchemy import text
 def answer_with_citations(question: str) -> Dict[str, Any]:
     # Minimal stub so tests can monkeypatch this symbol without importing heavy deps.
     return {"answer": "Insufficient evidence", "sources": []}
@@ -31,16 +32,23 @@ class CopilotMemory(BaseModel):
     citation_cache: List[str] = []
 
 
+# Initialize in-memory cache globals to avoid 'possibly unbound' warnings
+_DOC_CACHE: Dict[str, Tuple[float, List[str]]] = {}
+_DOC_HITS: int = 0
+_DOC_MISSES: int = 0
+
+
 def _get_or_create_session(session_id: Optional[str]) -> Tuple[Optional[int], CopilotMemory]:
     if not session_id:
         return None, CopilotMemory()
     with get_session() as s:
-        row = s.exec(
+        res = s.exec(
             """
             SELECT id, memory_json FROM copilot_sessions WHERE id = :sid
             """,
             params={"sid": int(session_id)} if str(session_id).isdigit() else {"sid": -1},
-        ).first()
+        )
+        row = (list(res)[0] if res is not None and len(list(res)) > 0 else None)
         if row and isinstance(row, tuple):
             _, mem_json = row
             try:
@@ -77,10 +85,18 @@ def _persist_memory(session_id: Optional[int], mem: CopilotMemory) -> None:
 
 def _candidate_company_ids() -> List[Tuple[int, str]]:
     try:
-        from sqlmodel import select
         with get_session() as s:
-            rows = list(s.exec(select(Company.id, Company.canonical_name).limit(200)))
-            return [(int(r[0]), str(r[1])) for r in rows]
+            res = s.exec(text("SELECT id, canonical_name FROM companies LIMIT 200"))  # type: ignore[arg-type]
+            rows = list(res) if res is not None else []
+            out: List[Tuple[int, str]] = []
+            for r in rows:
+                try:
+                    cid = int(r[0])
+                    name = str(r[1])
+                    out.append((cid, name))
+                except Exception:
+                    continue
+            return out
     except Exception:
         return []
 
@@ -125,11 +141,20 @@ def tool_company_lookup(name_or_id: str | int) -> Dict[str, Any]:
         if isinstance(name_or_id, int) or str(name_or_id).isdigit():
             c = s.get(Company, int(name_or_id))
         else:
-            # very naive lookup by canonical_name
-            from sqlmodel import select
-
-            res = s.exec(select(Company).where(Company.canonical_name == str(name_or_id))).first()
-            c = res
+            # naive lookup by canonical_name using text to satisfy typing
+            res = s.exec(text("SELECT id, canonical_name, website, segments, hq_country FROM companies WHERE canonical_name = :n"), {"n": str(name_or_id)})  # type: ignore[arg-type]
+            lst = list(res) if res is not None else []
+            r = lst[0] if lst else None
+            if r:
+                class _C:  # minimal shim for struct-like access
+                    id = r[0]
+                    canonical_name = r[1]
+                    website = r[2]
+                    segments = r[3]
+                    hq_country = r[4]
+                c = _C()
+            else:
+                c = None
         if not c:
             return {}
         return {
@@ -141,11 +166,11 @@ def tool_company_lookup(name_or_id: str | int) -> Dict[str, Any]:
         }
 
 
-def tool_compare_companies(ids: List[int], metrics: List[str]) -> List[Dict[str, Any]]:
+def tool_compare_companies(ids: List[int], metrics: List[str]) -> List[ComparisonRow]:
     # TODO: pull aligned metrics; for now, return placeholders
-    rows: List[Dict[str, Any]] = []
+    rows: List[ComparisonRow] = []
     for m in metrics[:5]:
-        rows.append(ComparisonRow(metric=m, a="n/a", b="n/a", delta="n/a").model_dump())
+        rows.append(ComparisonRow(metric=m, a="n/a", b="n/a", delta="n/a"))
     return rows
 
 
@@ -153,18 +178,6 @@ def tool_retrieve_docs(query: str, limit: int = 10) -> List[str]:
     # In-memory TTL cache to avoid repeated retrievals
     # key: query string -> (timestamp, urls)
     global _DOC_CACHE, _DOC_HITS, _DOC_MISSES  # type: ignore
-    try:
-        _DOC_CACHE
-    except NameError:
-        _DOC_CACHE = {}
-    try:
-        _DOC_HITS
-    except NameError:
-        _DOC_HITS = 0
-    try:
-        _DOC_MISSES
-    except NameError:
-        _DOC_MISSES = 0
     now = time.time()
     TTL = 600.0  # 10 minutes
     MAX_ENTRIES = 256

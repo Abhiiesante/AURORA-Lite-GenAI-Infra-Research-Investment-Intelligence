@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-"""
+r"""
 Populate Meilisearch and Qdrant with a small sample corpus to exercise the hybrid path.
 This script is idempotent and safe to run when either backend is unavailable.
 
 Usage (PowerShell):
-  ..\.venv\Scripts\python scripts/index_documents.py
+    ..\\.venv\\Scripts\\python scripts\\index_documents.py
 """
 
 from typing import Any, Dict, List
@@ -58,15 +58,14 @@ def index_qdrant() -> None:
         return
     try:
         from sentence_transformers import SentenceTransformer  # type: ignore
-
         embedder = SentenceTransformer("BAAI/bge-small-en-v1.5")
-        dim = embedder.get_sentence_embedding_dimension()
+        dim = int(embedder.get_sentence_embedding_dimension() or 384)
     except Exception:
         print("[qdrant] sentence-transformers not available; skipping")
         return
 
     try:
-        from qdrant_client.models import Distance, VectorParams, PointStruct  # type: ignore
+        from qdrant_client.models import Distance, VectorParams, Batch, ExtendedPointId  # type: ignore
 
         collections = qdrant.get_collections().collections
         if not any(c.name == "documents" for c in collections):
@@ -77,12 +76,12 @@ def index_qdrant() -> None:
             print("[qdrant] created collection 'documents'")
 
         vectors = embedder.encode([d["text"] for d in DOCS])
-        points = [
-            PointStruct(id=i + 1, vector=v.tolist(), payload=doc)  # stable ids for demo
-            for i, (doc, v) in enumerate(zip(DOCS, vectors))
-        ]
-        qdrant.upsert(collection_name="documents", points=points)
-        print(f"[qdrant] upserted {len(points)} points")
+        ids: List[ExtendedPointId] = [int(i + 1) for i in range(len(DOCS))]
+        vecs = [v.tolist() if hasattr(v, "tolist") else list(v) for v in vectors]
+        payloads = DOCS
+        batch = Batch(ids=ids, vectors=vecs, payloads=payloads)
+        qdrant.upsert(collection_name="documents", points=batch)
+        print(f"[qdrant] upserted {len(ids)} points")
     except Exception as e:
         print(f"[qdrant] indexing failed: {e}")
 

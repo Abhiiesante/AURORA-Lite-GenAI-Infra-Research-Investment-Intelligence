@@ -36,23 +36,40 @@ def compute_signal(news_df: pd.DataFrame, repos_df: pd.DataFrame, filings_df: pd
     # news
     if not news_df.empty and "company_ids" in news_df.columns:
         news_df = news_df.copy()
-        news_df["published_at"] = pd.to_datetime(news_df.get("published_at"), errors="coerce")
-        recent = news_df[news_df["published_at"] >= cutoff]
+        if "published_at" in news_df.columns:
+            news_df["published_at"] = pd.to_datetime(news_df["published_at"].astype(str), errors="coerce")
+        recent = news_df[news_df["published_at"] >= cutoff] if "published_at" in news_df.columns else news_df
         for _, row in recent.iterrows():
-            for cid in (row.get("company_ids") or []):
-                scores[cid] = scores.get(cid, 0) + 1.0
+            cids = row.get("company_ids")
+            if isinstance(cids, (list, tuple)):
+                for cid in cids:
+                    try:
+                        cid_i = int(cid)
+                    except Exception:
+                        continue
+                    scores[cid_i] = scores.get(cid_i, 0.0) + 1.0
     # repos
     if not repos_df.empty and "company_id" in repos_df.columns:
         agg = repos_df.groupby("company_id")["stars"].sum().fillna(0) / 10.0
-        for cid, val in agg.items():
-            scores[int(cid)] = scores.get(int(cid), 0) + float(val)
+        for cid_val, val in agg.items():
+            try:
+                cid_i = int(cid_val)  # type: ignore[arg-type]
+            except Exception:
+                continue
+            scores[cid_i] = scores.get(cid_i, 0.0) + float(val)
     # filings
     if not filings_df.empty and "company_id" in filings_df.columns:
         filings_df = filings_df.copy()
-        filings_df["filed_at"] = pd.to_datetime(filings_df.get("filed_at"), errors="coerce")
-        recent_f = filings_df[filings_df["filed_at"] >= cutoff]
-        for cid in recent_f.get("company_id").dropna().astype(int).tolist():
-            scores[cid] = scores.get(cid, 0) + 1.0
+        if "filed_at" in filings_df.columns:
+            filings_df["filed_at"] = pd.to_datetime(filings_df["filed_at"].astype(str), errors="coerce")
+            recent_f = filings_df[filings_df["filed_at"] >= cutoff]
+        else:
+            recent_f = filings_df
+        if "company_id" in recent_f.columns:
+            cids_series = recent_f["company_id"].dropna()
+            cids = pd.to_numeric(cids_series, errors="coerce").dropna().astype(int).tolist()
+            for cid in cids:
+                scores[int(cid)] = scores.get(int(cid), 0.0) + 1.0
     # normalize 0..100
     if not scores:
         return {}

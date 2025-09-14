@@ -1,9 +1,11 @@
 import os
 import json
+from typing import Any, Mapping, Sequence, cast
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
+from qdrant_client.http.models import Batch, ExtendedPointId, Payload
 import meilisearch
 
 MEILI_URL = os.getenv("MEILI_URL", "http://localhost:7700")
@@ -26,7 +28,12 @@ def main():
     except Exception:
         pass
     docs = df[["url", "title", "published_at"]].to_dict(orient="records")
-    meili.index(NEWS_INDEX).add_documents(docs)
+    # Ensure Mapping[str, Any] for type checkers with str keys
+    docs_for_meili: Sequence[Mapping[str, Any]] = [
+        {str(k): v for k, v in cast(dict[Any, Any], d).items()}
+        for d in docs
+    ]
+    meili.index(NEWS_INDEX).add_documents(docs_for_meili)
     # Vectorize text and push to Qdrant
     model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
     texts = (df["clean_text"].fillna("").astype(str)).tolist()
@@ -36,9 +43,18 @@ def main():
         client.get_collection(VEC_COLLECTION)
     except Exception:
         client.recreate_collection(VEC_COLLECTION, vectors_config=VectorParams(size=len(vecs[0]), distance=Distance.COSINE))
-    points = [{"id": i, "vector": vecs[i].tolist(), "payload": {"url": df.iloc[i]["url"], "title": df.iloc[i]["title"]}} for i in range(len(df))]
-    client.upsert(VEC_COLLECTION, points=points)
-    print("Indexed", len(points))
+    ids: list[ExtendedPointId] = [int(i) for i in range(len(df))]
+    vectors: list[list[float]] = [list(map(float, vecs[i].tolist())) for i in range(len(df))]
+    payloads: list[Payload] = [
+        {
+            "url": str(df.iloc[i]["url"]),
+            "title": str(df.iloc[i]["title"]),
+        }
+        for i in range(len(df))
+    ]
+    batch = Batch(ids=ids, vectors=vectors, payloads=payloads)
+    client.upsert(VEC_COLLECTION, points=batch)
+    print("Indexed", len(ids))
 
 
 if __name__ == "__main__":

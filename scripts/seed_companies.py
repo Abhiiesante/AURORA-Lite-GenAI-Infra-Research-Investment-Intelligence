@@ -22,12 +22,16 @@ def seed() -> int:
             canonical_id = (row.get("company_id") or name.lower().replace(" ", "-")).strip()
             segments = row.get("segment") or row.get("segments") or None
             comp = Company(
-                canonical_id=canonical_id,
                 canonical_name=name,
                 website=row.get("website"),
                 hq_country=row.get("country"),
                 segments=segments,
             )
+            if hasattr(comp, "canonical_id"):
+                try:
+                    setattr(comp, "canonical_id", canonical_id)
+                except Exception:
+                    pass
             s.add(comp)
             count += 1
         s.commit()

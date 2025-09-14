@@ -21,6 +21,7 @@ jobs:
       - name: Run weekly RAG eval gates
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RAG_GOLDEN_PATH: evals/golden.v1.jsonl
         run: |
           set -e
           if [ -z "${DATABASE_URL}" ]; then export DATABASE_URL="sqlite:///./aurora.db"; fi

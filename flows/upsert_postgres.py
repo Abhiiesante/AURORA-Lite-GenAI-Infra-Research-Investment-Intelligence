@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 from sqlmodel import select
+from sqlalchemy import text
 from apps.api.aurora.db import get_session, NewsItem, Filing, Repo, init_db
 
 
@@ -15,7 +16,10 @@ def upsert_news(df: pd.DataFrame) -> int:
                 continue
             title = (r.get("title") or "").strip() or url
             published_at = r.get("published_at")
-            existing = s.exec(select(NewsItem).where(NewsItem.external_id == url)).first()
+            rows_iter = s.exec(text("SELECT id FROM news_items WHERE external_id=:eid").bindparams(eid=url))
+            rows = list(rows_iter) if rows_iter is not None else []
+            row = rows[0] if rows else None
+            existing = s.get(NewsItem, int(row[0])) if row else None
             if existing:
                 existing.title = title or existing.title
                 existing.url = url
@@ -36,7 +40,10 @@ def upsert_filings(df: pd.DataFrame) -> int:
             url = (r.get("url") or "").strip()
             if not url:
                 continue
-            existing = s.exec(select(Filing).where(Filing.external_id == url)).first()
+            rows_iter = s.exec(text("SELECT id FROM filings WHERE external_id=:eid").bindparams(eid=url))
+            rows = list(rows_iter) if rows_iter is not None else []
+            row = rows[0] if rows else None
+            existing = s.get(Filing, int(row[0])) if row else None
             if existing:
                 existing.filed_at = r.get("filed_at") or existing.filed_at
                 existing.form = r.get("form_type") or existing.form
@@ -56,7 +63,10 @@ def upsert_repos(df: pd.DataFrame) -> int:
             url = (r.get("repo_url") or "").strip()
             if not url:
                 continue
-            existing = s.exec(select(Repo).where(Repo.repo_full_name == url)).first()
+            rows_iter = s.exec(text("SELECT id FROM repos WHERE repo_full_name = :name").bindparams(name=url))
+            rows = list(rows_iter) if rows_iter is not None else []
+            row = rows[0] if rows else None
+            existing = s.get(Repo, int(row[0])) if row else None
             if existing:
                 existing.stars = r.get("stars") or existing.stars
                 s.add(existing)

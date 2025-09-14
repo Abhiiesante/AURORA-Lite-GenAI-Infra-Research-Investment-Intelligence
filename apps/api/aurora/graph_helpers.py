@@ -18,7 +18,9 @@ def rebuild_comention_edges() -> Dict[str, int | bool]:
         auth = None
         if getattr(settings, "neo4j_user", None) and getattr(settings, "neo4j_password", None):  # type: ignore[attr-defined]
             auth = (settings.neo4j_user, settings.neo4j_password)
-        driver = GraphDatabase.driver(settings.neo4j_url, auth=auth)
+        # Guard: ensure URL is a string for driver
+        url = str(getattr(settings, "neo4j_url"))
+        driver = GraphDatabase.driver(url, auth=auth)
         cypher = (
             "MATCH (n:NewsItem)<-[:MENTIONED_IN]-(c1:Company),"
             "      (n)<-[:MENTIONED_IN]-(c2:Company) "
@@ -53,7 +55,8 @@ def query_ego(company_id: str) -> Dict[str, object]:
         auth = None
         if getattr(settings, "neo4j_user", None) and getattr(settings, "neo4j_password", None):  # type: ignore[attr-defined]
             auth = (settings.neo4j_user, settings.neo4j_password)
-        driver = GraphDatabase.driver(settings.neo4j_url, auth=auth)
+        url = str(getattr(settings, "neo4j_url"))
+        driver = GraphDatabase.driver(url, auth=auth)
         cypher = (
             "MATCH (c:Company {id: $cid})- [r:CO_MENTIONED] - (n:Company) "
             "RETURN c.id as src, n.id as dst, r.count as w LIMIT 50"
@@ -93,7 +96,8 @@ def query_derived(company_id: str, window: str = "90d") -> Dict[str, object]:
         auth = None
         if getattr(settings, "neo4j_user", None) and getattr(settings, "neo4j_password", None):  # type: ignore[attr-defined]
             auth = (settings.neo4j_user, settings.neo4j_password)
-        driver = GraphDatabase.driver(settings.neo4j_url, auth=auth)
+        url = str(getattr(settings, "neo4j_url"))
+        driver = GraphDatabase.driver(url, auth=auth)
         cypher = (
             "MATCH (c:Company {id: $cid})- [r:CO_MENTIONED] - (n:Company) "
             "WHERE r.updated_at >= timestamp() - 90*24*3600*1000 "
@@ -130,7 +134,8 @@ def query_similar(company_id: str, limit: int = 5) -> Dict[str, object]:
         auth = None
         if getattr(settings, "neo4j_user", None) and getattr(settings, "neo4j_password", None):  # type: ignore[attr-defined]
             auth = (settings.neo4j_user, settings.neo4j_password)
-        driver = GraphDatabase.driver(settings.neo4j_url, auth=auth)
+        url = str(getattr(settings, "neo4j_url"))
+        driver = GraphDatabase.driver(url, auth=auth)
         # Use co-mention weight as a proxy for similarity
         cypher = (
             "MATCH (c:Company {id: $cid})- [r:CO_MENTIONED] - (n:Company) "
@@ -165,7 +170,8 @@ def query_investors(company_id: str) -> Dict[str, object]:
         auth = None
         if getattr(settings, "neo4j_user", None) and getattr(settings, "neo4j_password", None):  # type: ignore[attr-defined]
             auth = (settings.neo4j_user, settings.neo4j_password)
-        driver = GraphDatabase.driver(settings.neo4j_url, auth=auth)
+        url = str(getattr(settings, "neo4j_url"))
+        driver = GraphDatabase.driver(url, auth=auth)
         cypher = (
             "MATCH (i:Investor)-[:INVESTED_IN]->(c:Company {id: $cid}) "
             "RETURN i.name as name LIMIT 50"
@@ -199,7 +205,8 @@ def query_talent(company_id: str) -> Dict[str, object]:
         auth = None
         if getattr(settings, "neo4j_user", None) and getattr(settings, "neo4j_password", None):  # type: ignore[attr-defined]
             auth = (settings.neo4j_user, settings.neo4j_password)
-        driver = GraphDatabase.driver(settings.neo4j_url, auth=auth)
+        url = str(getattr(settings, "neo4j_url"))
+        driver = GraphDatabase.driver(url, auth=auth)
         cypher = (
             "MATCH (p:Person)-[:WORKED_AT]->(c1:Company {id: $cid}),"
             "      (p)-[:WORKED_AT]->(c2:Company) "

@@ -33,3 +33,15 @@ def require_supabase_auth(authorization: Optional[str] = Header(None)) -> bool:
         return True
     except Exception:  # noqa: BLE001
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+
+# Lightweight RBAC roles via header for now: X-Role: admin|analyst|viewer
+def require_role(role: str, x_role: Optional[str] = Header(None)) -> None:
+    want = (role or "").lower()
+    have = (x_role or "").lower()
+    if not want or have == want:
+        return
+    # allow admin to pass any requirement
+    if have == "admin":
+        return
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="forbidden")

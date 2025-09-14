@@ -6,4 +6,4 @@ from apps.api.aurora.db import init_db, get_session
 def hybrid_retrieval(q: str, top_n: int = 10, rerank_k: int = 6):
     a = _bm25_like(q, top_n)
     b = _dense_like(q, top_n)
-    return rrf_fuse(a, b)
+    return rrf_fuse([a, b], rerank_k)

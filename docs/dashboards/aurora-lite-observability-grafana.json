@@ -1,0 +1,52 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "9.0.0" },
+    { "type": "panel", "id": "stat", "name": "Stat", "version": "9.0.0" }
+  ],
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Requests (total)",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "targets": [ { "expr": "aurora_request_total" } ]
+    },
+    {
+      "type": "stat",
+      "title": "Error rate",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "targets": [ { "expr": "aurora_error_rate_ratio" } ]
+    },
+    {
+      "type": "stat",
+      "title": "Cache hit ratio",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "targets": [ { "expr": "aurora_cache_hit_ratio" } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Latency percentiles (ms)",
+      "gridPos": { "x": 0, "y": 4, "w": 24, "h": 8 },
+      "targets": [
+        { "expr": "aurora_request_latency_p50_milliseconds" },
+        { "expr": "aurora_request_latency_p95_milliseconds" },
+        { "expr": "aurora_request_latency_p99_milliseconds" }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["aurora-lite", "observability"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Aurora-Lite Observability",
+  "version": 1
+}

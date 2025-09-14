@@ -19,10 +19,9 @@ export default function Home() {
   <a href="/trends">Trends</a>
   <a href="/compare">Compare</a>
   <a href="/dashboard">Dashboard</a>
-  <a href="/trends">Trends</a>
-  <a href="/jobs">Jobs</a>
   <a href="/palette">Command‑K</a>
   <a href="/jobs">Jobs</a>
+  <a href="/gate-status">Gate Status</a>
         <button onClick={() => axios.post(`${api}/health/seed`).then(()=>alert('Seeded DB/search')).catch(()=>alert('Seed failed'))}>Seed</button>
         <button onClick={() => axios.post(`${api}/health/seed-rag`).then(()=>alert('Seeded RAG')).catch(()=>alert('RAG seed failed'))}>Seed RAG</button>
       </div>

@@ -33,6 +33,13 @@ class Settings(BaseSettings):
     rate_limit_enabled: bool = False
     rate_limit_per_minute: int = 120
     citations_enforce: bool = True
+    # Phase 4: API key & plans (default off to preserve current behavior)
+    apikey_required: bool = False
+    apikey_header_name: str = "X-API-Key"
+    # Optionally preload plans from env JSON at startup
+    plans_json: Optional[str] = None
+    # Hashing salt (optional) when generating api key hashes out-of-band. For verification we accept plain sha256(key).
+    api_hash_salt: Optional[str] = None
     alert_delta_threshold: float = 5.0
     use_topic_modeling: bool = False  # M4: enable BERTopic pipeline
     topic_refit_days: int = 7  # M4: days between topic refits

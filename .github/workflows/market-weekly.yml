@@ -1,0 +1,45 @@
+name: market-weekly
+on:
+  schedule:
+    - cron: '15 6 * * 1' # Mondays 06:15 UTC, after ragas-weekly
+  workflow_dispatch:
+
+jobs:
+  market-perf-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: apps/api/requirements.txt
+      - name: Install API deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/api/requirements.txt
+      - name: Run market perf gate (enforced)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CI_MARKET_GATE: '1'
+          CI_MARKET_PAGE_SIZE: '400'
+          CI_MARKET_RUNS: '7'
+          MARKET_P95_BUDGET_MS: '2000'
+        run: |
+          set -e
+          if [ -z "${DATABASE_URL}" ]; then export DATABASE_URL="sqlite:///./aurora.db"; fi
+          python scripts/ci_gates.py | tee market_gate_output.txt
+      - name: Upload market gate output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-gate-output
+          path: market_gate_output.txt
+      - name: Job summary
+        if: always()
+        run: |
+          echo "### Market perf gate weekly run" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Params: size=${CI_MARKET_PAGE_SIZE}, runs=${CI_MARKET_RUNS}, budget=${MARKET_P95_BUDGET_MS}ms" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          sed -n '1,200p' market_gate_output.txt >> $GITHUB_STEP_SUMMARY

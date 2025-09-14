@@ -15,8 +15,11 @@ import sys as _sys
 from . import config as _config  # noqa: F401
 
 # Alias so that importing apps.api.aurora.config returns the same module object
-_sys.modules.setdefault("apps.api.aurora.config", _config)
+if _config is not None:
+	_sys.modules.setdefault("apps.api.aurora.config", _config)
 
 # Optionally, also expose this package under the apps.api.aurora namespace if needed
-_sys.modules.setdefault("apps.api.aurora", _sys.modules.get(__name__))
+mod = _sys.modules.get(__name__)
+if mod is not None:
+	_sys.modules.setdefault("apps.api.aurora", mod)
 

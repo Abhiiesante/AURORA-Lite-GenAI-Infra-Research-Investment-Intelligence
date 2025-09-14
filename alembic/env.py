@@ -4,6 +4,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 from alembic import context
+from typing import Any, Dict
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -57,8 +58,10 @@ def run_migrations_online() -> None:
 
     """
 
+    sect_raw = config.get_section(config.config_ini_section)
+    sect: Dict[str, Any] = dict(sect_raw) if sect_raw is not None else {}
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
+        sect,  # type: ignore[arg-type]
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

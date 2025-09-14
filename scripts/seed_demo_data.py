@@ -7,6 +7,7 @@ Run: python scripts/seed_demo_data.py
 
 from datetime import date, timedelta
 from sqlmodel import Session
+from sqlalchemy import text
 
 try:
     from apps.api.aurora.db import engine, Company, CompanyMetric  # type: ignore
@@ -17,29 +18,33 @@ except Exception:
 def seed():
     with Session(engine) as s:
         # Create companies if not exist
-        pine = s.exec("SELECT id FROM companies WHERE canonical_name='Pinecone'").first()
-        weav = s.exec("SELECT id FROM companies WHERE canonical_name='Weaviate'").first()
+        pine = s.exec(text("SELECT id FROM companies WHERE canonical_name='Pinecone'"))  # type: ignore[arg-type]
+        pine = pine.first() if pine is not None else None
+        weav = s.exec(text("SELECT id FROM companies WHERE canonical_name='Weaviate'"))  # type: ignore[arg-type]
+        weav = weav.first() if weav is not None else None
         if not pine:
-            s.exec(
+            s.exec(text(
                 """
                 INSERT INTO companies(canonical_name, name, segments, website, hq_country, signal_score)
                 VALUES ('Pinecone', 'Pinecone', 'Vector DB', 'https://www.pinecone.io', 'US', 55)
                 """
-            )
+            ))  # type: ignore[arg-type]
         if not weav:
-            s.exec(
+            s.exec(text(
                 """
                 INSERT INTO companies(canonical_name, name, segments, website, hq_country, signal_score)
                 VALUES ('Weaviate', 'Weaviate', 'Vector DB', 'https://weaviate.io', 'NL', 53)
                 """
-            )
+            ))  # type: ignore[arg-type]
         s.commit()
 
         # Re-fetch IDs
-        pine_id = s.exec("SELECT id FROM companies WHERE canonical_name='Pinecone'").first()
-        weav_id = s.exec("SELECT id FROM companies WHERE canonical_name='Weaviate'").first()
-        pine_id = int(pine_id[0] if isinstance(pine_id, tuple) else pine_id)
-        weav_id = int(weav_id[0] if isinstance(weav_id, tuple) else weav_id)
+        pine_id_row = s.exec(text("SELECT id FROM companies WHERE canonical_name='Pinecone'"))  # type: ignore[arg-type]
+        pine_id_row = pine_id_row.first() if pine_id_row is not None else None
+        weav_id_row = s.exec(text("SELECT id FROM companies WHERE canonical_name='Weaviate'"))  # type: ignore[arg-type]
+        weav_id_row = weav_id_row.first() if weav_id_row is not None else None
+        pine_id = int(pine_id_row[0] if isinstance(pine_id_row, (tuple, list)) else pine_id_row) if pine_id_row is not None else 0
+        weav_id = int(weav_id_row[0] if isinstance(weav_id_row, (tuple, list)) else weav_id_row) if weav_id_row is not None else 0
 
         # Insert last 4 weeks of metrics
         start = date.today() - timedelta(days=21)

@@ -14,6 +14,17 @@ from apps.api.aurora.db import (
 )
 from apps.api.aurora.metrics import compute_signal_series, compute_alerts
 
+def _safe_float(x) -> float:
+    try:
+        if x is None:
+            return 0.0
+        return float(x)
+    except Exception:
+        try:
+            return float(str(x))
+        except Exception:
+            return 0.0
+
 
 @task
 def _list_company_ids() -> List[int]:
@@ -40,7 +51,7 @@ def _persist_latest_signal(company_id: int) -> int:
     if not series:
         return 0
     latest = series[-1]
-    score = float(latest.get("signal_score") or latest.get("value") or 0.0)
+    score = _safe_float(latest.get("signal_score") or latest.get("value") or 0.0)
     week_start = latest.get("week_start") or latest.get("date") or datetime.now(timezone.utc).date().isoformat()
     try:
         with get_session() as s:
@@ -66,8 +77,8 @@ def _persist_alerts(company_id: int) -> int:
                 obj = Alert(
                     company_id=company_id,
                     type=str(a.get("type") or "threshold"),
-                    score_delta=a.get("delta"),
-                    reason=a.get("reason"),
+                    score_delta=(_safe_float(a.get("score_delta")) if a.get("score_delta") is not None else None),
+                    reason=(str(a.get("reason")) if a.get("reason") is not None else None),
                     evidence_urls=None,
                     created_at=datetime.now(timezone.utc).isoformat(),
                 )

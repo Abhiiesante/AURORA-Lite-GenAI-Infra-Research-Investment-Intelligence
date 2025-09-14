@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Sequence, cast
 
 from .config import settings
 
@@ -44,18 +44,18 @@ def _qdrant_search(query: str, limit: int = 12) -> List[Dict[str, Any]]:
         qdrant = None  # type: ignore
     if not qdrant:
         return []
-    emb = None
+    emb: Sequence[float] | None = None
     emb_model = _load_embedder()
     if emb_model:
         try:
             vec = emb_model.encode(query)
-            emb = vec.tolist() if hasattr(vec, "tolist") else list(vec)
+            emb = cast(Sequence[float], vec.tolist() if hasattr(vec, "tolist") else list(vec))
         except Exception:
             emb = None
     if not emb:
         return []
     try:
-        res = qdrant.search(collection_name="documents", query_vector=emb, limit=limit)
+        res = qdrant.search(collection_name="documents", query_vector=list(emb), limit=limit)  # type: ignore[arg-type]
         out: List[Dict[str, Any]] = []
         for p in res:
             payload = getattr(p, "payload", {}) or {}
@@ -85,7 +85,7 @@ def _meili_search(query: str, limit: int = 12) -> List[Dict[str, Any]]:
         idx = meili.index("documents")
         res = idx.search(query, {"limit": limit})
         out: List[Dict[str, Any]] = []
-        for h in res.get("hits", []) or []:
+        for h in (res.get("hits", []) or []):
             out.append(
                 {
                     "id": str(h.get("id") or h.get("_id") or h.get("url") or h.get("doc_id") or ""),
@@ -165,8 +165,10 @@ def validate_citations(citations: List[Any], retrieved_docs: List[Dict[str, Any]
     for c in citations or []:
         if isinstance(c, str):
             raw_urls.append(c)
-        elif isinstance(c, dict) and c.get("url"):
-            raw_urls.append(c.get("url"))
+        elif isinstance(c, dict):
+            u = c.get("url")
+            if isinstance(u, str):
+                raw_urls.append(u)
     valid = [u for u in raw_urls if u in allow]
     invalid = [u for u in raw_urls if u not in allow]
     suggested: List[str] = []

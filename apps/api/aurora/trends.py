@@ -24,6 +24,7 @@ def compute_top_topics(window: str = "90d", limit: int = 10) -> List[Dict[str, o
             with get_session() as s:  # type: ignore
                 topics = list(s.exec(select(Topic)).all())  # type: ignore[attr-defined]
                 out: List[Dict[str, object]] = []
+                rows: List[object] = []
                 for t in topics[:limit]:
                     tid = getattr(t, "topic_id", None) or 0
                     label = getattr(t, "label", None) or ""

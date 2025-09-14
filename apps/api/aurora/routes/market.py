@@ -9,6 +9,8 @@ def graph():
     try:
         nodes = []
         edges = []
+        if neo4j is None:
+            raise RuntimeError("neo4j client not configured")
         with neo4j.session() as s:
             res = s.run(
                 """

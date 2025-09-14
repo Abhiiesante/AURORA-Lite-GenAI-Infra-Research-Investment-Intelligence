@@ -1,40 +1,114 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import List, Dict, Any
-
-from .main import _cache_key, _cache_set
 
 
 def run_ragas_eval(questions: List[str]) -> Dict[str, Any]:
-    """Run a lightweight RAG evaluation. If `ragas` is available we compute dummy per-question
-    values to simulate metrics; otherwise we use the known baseline. Always persists a report artifact.
+    """Run a RAG faithfulness evaluation over the given questions.
+
+    Behavior:
+    - If `ragas` and `datasets` are installed, compute faithfulness, answer relevancy, and context recall.
+    - Otherwise, fall back to a lightweight heuristic using available endpoints (/copilot/ask and /tools/retrieve_docs).
+
+    Returns a dict with keys: { ok, summary: {faithfulness, relevancy, recall}, details: [ ... ] }.
     """
-    baseline = {"faithfulness": 0.9, "relevancy": 0.8, "recall": 0.72}
-    results: List[Dict[str, float]] = []
     try:
-        # Try to import ragas to decide behavior (we won't compute real metrics here)
-        import ragas  # type: ignore  # noqa: F401
-        # Simulate per-question scores trending around baseline
-        for i, q in enumerate(questions or []):
-            jitter = ((i % 3) - 1) * 0.01
-            results.append({
-                "faithfulness": max(0.0, min(1.0, baseline["faithfulness"] + jitter)),
-                "relevancy": max(0.0, min(1.0, baseline["relevancy"] + jitter)),
-                "recall": max(0.0, min(1.0, baseline["recall"] + jitter)),
-            })
-        if results:
-            # average
-            n = float(len(results))
-            summary = {
-                "faithfulness": round(sum(r["faithfulness"] for r in results) / n, 4),
-                "relevancy": round(sum(r["relevancy"] for r in results) / n, 4),
-                "recall": round(sum(r["recall"] for r in results) / n, 4),
-            }
-        else:
-            summary = dict(baseline)
+        # Use in-process TestClient to avoid external HTTP dependency
+        from fastapi.testclient import TestClient  # type: ignore
+        from .main import app  # type: ignore
+    except Exception as e:  # pragma: no cover
+        return {"ok": False, "error": f"app unavailable: {e}"}
+
+    client = TestClient(app)
+    qs = [q for q in (questions or []) if isinstance(q, str) and q.strip()]
+    if not qs:
+        qs = ["Pinecone traction"]
+
+    # Gather answers and contexts
+    records: List[Dict[str, Any]] = []
+    for q in qs[:50]:
+        try:
+            a = client.post("/copilot/ask", json={"question": q})
+            ans = a.json() if a.status_code == 200 else {"answer": "", "sources": []}
+        except Exception:
+            ans = {"answer": "", "sources": []}
+        try:
+            r = client.get("/tools/retrieve_docs", params={"query": q, "limit": 6})
+            docs = r.json().get("docs", []) if r.status_code == 200 else []
+        except Exception:
+            docs = []
+        # contexts: best-effort text; fallback to URL strings
+        ctx_texts: List[str] = []
+        for d in docs:
+            txt = (d.get("text") or d.get("title") or d.get("url") or "").strip()
+            if txt:
+                ctx_texts.append(txt)
+        records.append({
+            "question": q,
+            "answer": ans.get("answer") or "",
+            "contexts": ctx_texts or [u for u in ans.get("sources", []) if isinstance(u, str)],
+            "sources": ans.get("sources", []) or [],
+        })
+
+    # Try real ragas path
+    try:
+        from ragas import evaluate  # type: ignore
+        from ragas.metrics import faithfulness, answer_relevancy, context_recall  # type: ignore
+        from datasets import Dataset  # type: ignore
+
+        ds = Dataset.from_dict({
+            "question": [r["question"] for r in records],
+            "answer": [r["answer"] for r in records],
+            "contexts": [r["contexts"] for r in records],
+        })
+        result = evaluate(
+            ds,
+            metrics=[faithfulness, answer_relevancy, context_recall],
+        )
+        # result is an EvaluationResult with scores and details
+        scores = result.scores  # type: ignore[attr-defined]
+        summary = {
+            "faithfulness": float(scores.get("faithfulness", 0.0)),
+            "relevancy": float(scores.get("answer_relevancy", 0.0)),
+            "recall": float(scores.get("context_recall", 0.0)),
+        }
+        return {"ok": True, "summary": summary, "details": getattr(result, "items", [])}
     except Exception:
-        summary = dict(baseline)
-    key = _cache_key("evals_report", {"week": datetime.now(timezone.utc).isocalendar().week})
-    _cache_set(key, {"summary": summary, "generated_at": datetime.now(timezone.utc).isoformat()}, ttl_sec=86400)
-    return {"ok": True, "summary": summary}
+        # Heuristic fallback: approximate metrics using sources vs retrieved
+        details = []
+        f_vals: List[float] = []
+        r_vals: List[float] = []
+        c_vals: List[float] = []
+        for rec in records:
+            ctx = set([c for c in rec.get("contexts", []) if isinstance(c, str)])
+            srcs = set([s for s in rec.get("sources", []) if isinstance(s, str)])
+            # Faithfulness ~ 1 if at least one citation exists; 0 otherwise
+            f = 1.0 if srcs else 0.0
+            # Relevancy ~ Jaccard over token sets of answer and concatenated contexts (very rough)
+            try:
+                ans_tokens = set((rec.get("answer") or "").lower().split())
+                ctx_tokens = set(" ".join(list(ctx)).lower().split())
+                inter = len(ans_tokens & ctx_tokens)
+                union = len(ans_tokens | ctx_tokens) or 1
+                r = inter / union
+            except Exception:
+                r = 0.0
+            # Context recall ~ fraction of citations present in retrieved pool (proxy)
+            try:
+                pool = set(ctx)
+                c = (len(srcs & pool) / (len(srcs) or 1)) if srcs else 0.0
+            except Exception:
+                c = 0.0
+            f_vals.append(f)
+            r_vals.append(r)
+            c_vals.append(c)
+            details.append({
+                "question": rec.get("question"),
+                "faithfulness": round(f, 3),
+                "relevancy": round(r, 3),
+                "recall": round(c, 3),
+            })
+        def avg(xs: List[float]) -> float:
+            return round(sum(xs) / max(1, len(xs)), 3)
+        summary = {"faithfulness": avg(f_vals), "relevancy": avg(r_vals), "recall": avg(c_vals)}
+        return {"ok": True, "summary": summary, "details": details, "note": "heuristic fallback; install 'ragas' for true metrics"}

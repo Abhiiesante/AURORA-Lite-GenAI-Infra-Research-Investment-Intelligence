@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: aurora-lite
+    metrics_path: /metrics
+    static_configs:
+      # If API runs on host (uvicorn on localhost:8000), use host.docker.internal inside Docker on Mac/Windows.
+      # On Linux, replace with the host IP or attach both services to the same user-defined network.
+      - targets: ["host.docker.internal:8000"]
+        labels:
+          env: local

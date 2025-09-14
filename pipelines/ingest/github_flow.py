@@ -1,4 +1,5 @@
 from prefect import flow, task
+from typing import Any, cast
 import requests
 import os
 from datetime import datetime
@@ -24,8 +25,8 @@ def persist(payload: dict):
 
 @flow
 def github_flow():
-    data = fetch_repos(GITHUB_URL)
-    return persist(data)
+    data = cast(Any, fetch_repos)(GITHUB_URL)
+    return cast(Any, persist)(data)
 
 if __name__ == "__main__":
     print(github_flow())

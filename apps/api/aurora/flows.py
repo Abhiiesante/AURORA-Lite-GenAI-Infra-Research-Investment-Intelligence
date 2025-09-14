@@ -5,7 +5,7 @@ Prefect flow stubs for M2: metrics compute, signal score, and topic trends.
 These are minimal, idempotent placeholders to be expanded later.
 """
 
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any, cast, Callable, TypeVar, overload
 from .config import settings
 
 try:
@@ -15,26 +15,23 @@ except Exception:
     _HAVE_PREFECT = False
 
 
+T = TypeVar("T", bound=Callable[..., Any])
+
+@overload
+def _noop_decorator(func: T) -> T: ...
+
+@overload
+def _noop_decorator(*, name: str = ...) -> Callable[[T], T]: ...
+
 def _noop_decorator(*dargs, **dkwargs):
     """A flexible no-op decorator that supports both @decorator and @decorator(...).
     It ignores any decorator arguments and returns the original function unchanged.
     """
-    # Case 1: Used as @decorator on a function directly
     if dargs and callable(dargs[0]) and len(dargs) == 1 and not dkwargs:
         func = dargs[0]
-
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-
-        return wrapper
-
-    # Case 2: Used as @decorator(name="...") -> return an inner decorator
-    def _inner(func):
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-
-        return wrapper
-
+        return func
+    def _inner(func: T) -> T:
+        return func
     return _inner
 
 
@@ -276,8 +273,9 @@ def validate_quality() -> dict:
 
 @_flow(name="m2-refresh-company")
 def refresh_company(company_id: int, window: str = "90d") -> dict:
-    metrics = compute_company_metrics(company_id, window)
-    score = compute_signal_score(company_id)
+    # When using no-op decorators, tasks return dicts directly; under Prefect they return futures.
+    metrics = cast(Any, compute_company_metrics)(company_id=company_id, window=window)
+    score = cast(Any, compute_signal_score)(company_id=company_id)
     return {"metrics": metrics, "score": score}
 
 
