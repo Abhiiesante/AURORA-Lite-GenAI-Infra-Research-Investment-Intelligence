@@ -1,0 +1,84 @@
+name: Tenant Retrieval Smoke (optional)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'apps/api/**'
+      - 'scripts/**'
+      - '.github/workflows/tenant-retrieval-smoke.yml'
+
+jobs:
+  smoke:
+    if: ${{ vars.AURORA_RUN_TENANT_SMOKE == '1' || vars.AURORA_RUN_TENANT_SMOKE == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      meilisearch:
+        image: getmeili/meilisearch:v1.7
+        ports:
+          - 7700:7700
+        env:
+          MEILI_NO_ANALYTICS: 'true'
+        options: >-
+          --health-cmd "curl -sS http://localhost:7700/health || exit 1"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+      qdrant:
+        image: qdrant/qdrant:latest
+        ports:
+          - 6333:6333
+        options: >-
+          --health-cmd "curl -sS http://localhost:6333/collections || exit 1"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Seed tenants (clean start)
+        env:
+          PYTHONPATH: .
+          MEILI_URL: http://localhost:7700
+          QDRANT_URL: http://localhost:6333
+        run: |
+          source .venv/bin/activate
+          RESET_MEILI=1 RESET_QDRANT_ALL=1 AURORA_DEFAULT_TENANT_ID=1 python scripts/index_documents.py
+          AURORA_DEFAULT_TENANT_ID=1 python scripts/index_documents.py
+          AURORA_DEFAULT_TENANT_ID=2 python scripts/index_documents.py
+
+      - name: Run tenant retrieval smoke (script)
+        env:
+          PYTHONPATH: .
+          MEILI_URL: http://localhost:7700
+          QDRANT_URL: http://localhost:6333
+        run: |
+          source .venv/bin/activate
+          python scripts/smoke_retrieval_tenants.py
+
+      - name: Run pytest wrapper (optional)
+        env:
+          PYTHONPATH: .
+          MEILI_URL: http://localhost:7700
+          QDRANT_URL: http://localhost:6333
+          AURORA_RUN_TENANT_SMOKE: '1'
+        run: |
+          source .venv/bin/activate
+          pytest -q apps/api/tests/test_api_tenant_retrieval.py -q

@@ -403,6 +403,7 @@ if _HAVE_SQLMODEL:
         __table_args__ = {"extend_existing": True}
 
         id: Optional[int] = Field(default=None, primary_key=True)  # type: ignore
+        tenant_id: Optional[int] = Field(default=None, index=True)  # type: ignore
         uid: str = Field(index=True)  # type: ignore  # e.g., "company:pinecone"
         type: str = Field(index=True)  # type: ignore  # company|person|investor|signal|claim
         properties_json: Optional[str] = None
@@ -416,6 +417,7 @@ if _HAVE_SQLMODEL:
         __table_args__ = {"extend_existing": True}
 
         id: Optional[int] = Field(default=None, primary_key=True)  # type: ignore
+        tenant_id: Optional[int] = Field(default=None, index=True)  # type: ignore
         src_uid: str = Field(index=True)  # type: ignore
         dst_uid: str = Field(index=True)  # type: ignore
         type: str = Field(index=True)  # type: ignore  # invested_in|mentions|co_mentioned|competitor|evidence_of
@@ -449,7 +451,25 @@ if _HAVE_SQLMODEL:
         at_ts: str = Field(index=True)  # type: ignore
         snapshot_hash: str = Field(index=True)  # type: ignore
         signer: Optional[str] = Field(default=None, index=True)  # type: ignore
+        signature: Optional[str] = Field(default=None)  # type: ignore
+        signature_backend: Optional[str] = Field(default=None, index=True)  # type: ignore
+        cert_chain_pem: Optional[str] = None
+        # Sigstore DSSE/Rekor metadata (optional)
+        dsse_bundle_json: Optional[str] = None
+        rekor_log_id: Optional[str] = Field(default=None, index=True)  # type: ignore
+        rekor_log_index: Optional[int] = Field(default=None, index=True)  # type: ignore
         notes: Optional[str] = None
+        created_at: Optional[str] = Field(default=None, index=True)  # type: ignore
+
+    class IngestLedger(SQLModel, table=True):  # type: ignore
+        __tablename__ = "ingest_ledger"
+        __table_args__ = {"extend_existing": True}
+
+        id: Optional[int] = Field(default=None, primary_key=True)  # type: ignore
+        ingest_event_id: str = Field(index=True)  # type: ignore
+        snapshot_hash: Optional[str] = Field(default=None, index=True)  # type: ignore
+        signer: Optional[str] = Field(default=None, index=True)  # type: ignore
+        signature: Optional[str] = None
         created_at: Optional[str] = Field(default=None, index=True)  # type: ignore
 
     # --- Phase 5: Agents & Deal Rooms ---

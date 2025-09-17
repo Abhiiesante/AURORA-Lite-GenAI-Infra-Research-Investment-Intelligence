@@ -6,11 +6,13 @@ from sqlmodel import select
 
 router = APIRouter()
 
-@router.get("/health")
+# Align with include_router(prefix="/health"): GET /health
+@router.get("/")
 def health():
     return {"status": "ok"}
 
 
+# Will be exposed at POST /health/seed via router prefix
 @router.post("/seed")
 def seed():
     init_db()
@@ -48,6 +50,7 @@ def seed():
     return {"status": "seeded"}
 
 
+# Will be exposed at POST /health/seed-rag via router prefix
 @router.post("/seed-rag")
 def seed_rag():
     return seed_sample_docs()

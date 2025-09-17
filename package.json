@@ -1,11 +1,20 @@
 {
   "name": "aurora-lite",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "packageManager": "pnpm@9.7.0",
   "scripts": {
     "dev": "pnpm --filter aurora-web dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "@react-three/drei": "9.103.0",
+    "@react-three/fiber": "8.15.18",
+    "classnames": "2.5.1",
+    "three": "0.161.0"
   }
 }

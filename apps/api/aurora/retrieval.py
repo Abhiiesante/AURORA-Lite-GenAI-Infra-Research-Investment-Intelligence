@@ -3,6 +3,33 @@ from __future__ import annotations
 from typing import Any, Dict, List, Tuple, Sequence, cast
 
 from .config import settings
+import os
+
+
+def _tenant_collection_mode() -> str:
+    # Modes: 'filter' (default) keeps single collection with tenant_id payload filter
+    #        'collection' uses per-tenant Qdrant collections
+    mode = (os.getenv("VECTOR_TENANT_MODE") or os.getenv("TENANT_INDEXING_MODE") or "filter").strip().lower()
+    return mode if mode in ("filter", "collection") else "filter"
+
+
+def _qdrant_collection_name(base: str = "documents") -> str:
+    mode = _tenant_collection_mode()
+    tid = _current_tenant_id()
+    if mode == "collection" and tid:
+        return f"{base}_tenant_{tid}"
+    return base
+
+def _current_tenant_id() -> str | None:
+    # Retrieval doesn't have Request context; rely on env fallback for now.
+    # The API layer scopes citations and endpoints by tenant already.
+    tid = os.getenv("AURORA_DEFAULT_TENANT_ID")
+    try:
+        # Optionally allow settings to carry a default_tenant_id
+        tid = getattr(settings, "default_tenant_id", tid)  # type: ignore[attr-defined]
+    except Exception:
+        pass
+    return str(tid) if tid else None
 
 _embedder = None
 _reranker = None
@@ -55,9 +82,47 @@ def _qdrant_search(query: str, limit: int = 12) -> List[Dict[str, Any]]:
     if not emb:
         return []
     try:
-        res = qdrant.search(collection_name="documents", query_vector=list(emb), limit=limit)  # type: ignore[arg-type]
+        tenant_id = _current_tenant_id()
+        search_kwargs: Dict[str, Any] = {}
+        base_collection = os.getenv("DOCUMENTS_VEC_COLLECTION_BASE", "documents")
+        collection_name = _qdrant_collection_name(base_collection)
+        if _tenant_collection_mode() == "filter" and tenant_id:
+            try:
+                from qdrant_client.models import Filter, FieldCondition, MatchValue  # type: ignore
+                search_kwargs["query_filter"] = Filter(must=[FieldCondition(key="tenant_id", match=MatchValue(value=tenant_id))])
+            except Exception:
+                pass
+        # Prefer modern query_points API; fallback to legacy search if unavailable
+        points = None
+        try:
+            qp = qdrant.query_points(
+                collection_name=collection_name,
+                query=list(emb),
+                limit=limit,
+                with_payload=True,
+                **search_kwargs,
+            )
+            points = getattr(qp, "points", None) or qp
+        except Exception:
+            try:
+                res = qdrant.search(collection_name=collection_name, query_vector=list(emb), limit=limit, **search_kwargs)  # type: ignore[arg-type]
+                points = res
+            except Exception:
+                # Fallback to base collection if per-tenant collection is missing
+                try:
+                    qp = qdrant.query_points(
+                        collection_name=base_collection,
+                        query=list(emb),
+                        limit=limit,
+                        with_payload=True,
+                        **search_kwargs,
+                    )
+                    points = getattr(qp, "points", None) or qp
+                except Exception:
+                    res = qdrant.search(collection_name=base_collection, query_vector=list(emb), limit=limit, **search_kwargs)  # type: ignore[arg-type]
+                    points = res
         out: List[Dict[str, Any]] = []
-        for p in res:
+        for p in points or []:
             payload = getattr(p, "payload", {}) or {}
             out.append(
                 {
@@ -83,7 +148,12 @@ def _meili_search(query: str, limit: int = 12) -> List[Dict[str, Any]]:
         return []
     try:
         idx = meili.index("documents")
-        res = idx.search(query, {"limit": limit})
+        params: Dict[str, Any] = {"limit": limit}
+        tenant_id = _current_tenant_id()
+        if tenant_id:
+            # Store tenant_id as string in Meilisearch and quote in filter for compatibility
+            params["filter"] = [f"tenant_id = '{tenant_id}'"]
+        res = idx.search(query, params)
         out: List[Dict[str, Any]] = []
         for h in (res.get("hits", []) or []):
             out.append(

@@ -1,0 +1,55 @@
+name: KG Smokes
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  smokes-no-admin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deps
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run smoke_kg_node (skip ok)
+        run: . .venv/bin/activate && python -m scripts.smoke_kg_node
+      - name: Run smoke_kg_find (skip ok)
+        run: . .venv/bin/activate && python -m scripts.smoke_kg_find
+      - name: Run smoke_kg_edges (skip ok)
+        run: . .venv/bin/activate && python -m scripts.smoke_kg_edges
+
+  smokes-with-admin:
+    if: ${{ secrets.DEV_ADMIN_TOKEN != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deps
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run smokes with admin
+        env:
+          DEV_ADMIN_TOKEN: ${{ secrets.DEV_ADMIN_TOKEN }}
+        run: |
+          . .venv/bin/activate
+          python -m scripts.smoke_kg_node
+          python -m scripts.smoke_kg_find
+          python -m scripts.smoke_kg_edges

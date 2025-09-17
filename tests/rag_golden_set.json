@@ -1,0 +1,17 @@
+[
+  {
+    "id": "Q001",
+    "question": "What is Pinecone's primary product and when did their Series B happen?",
+    "expected_output": {
+      "one_line": "Pinecone is a managed vector database platform [source: https://pinecone.io/...].",
+      "evidence": [
+        "https://pinecone.io/blog/",
+        "https://www.crunchbase.com/organization/pinecone"
+      ]
+    },
+    "evaluation_rules": {
+      "must_contain_sources": ["pinecone.io", "crunchbase.com"],
+      "faithfulness_required": 0.9
+    }
+  }
+]

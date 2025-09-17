@@ -1,4 +1,3 @@
-from qdrant_client import QdrantClient
 from .config import settings
 import importlib
 from typing import Any, List, Dict, Optional, Tuple
@@ -6,6 +5,15 @@ from pathlib import Path
 import json
 from .clients import meili
 from rapidfuzz import fuzz
+def _get_qdrant_client():
+    try:
+        from qdrant_client import QdrantClient  # type: ignore
+    except Exception as e:
+        raise RuntimeError("Qdrant client not installed. Install qdrant-client to enable vector search.") from e
+    if not settings.qdrant_url:
+        raise RuntimeError("Qdrant URL not configured")
+    return QdrantClient(url=settings.qdrant_url)
+
 
 
 def get_rag_index(collection: str = "docs"):
@@ -15,7 +23,7 @@ def get_rag_index(collection: str = "docs"):
     except Exception as e:
         raise RuntimeError("LlamaIndex not installed or incompatible. Install dependencies to enable RAG.") from e
 
-    client = QdrantClient(url=settings.qdrant_url) if settings.qdrant_url else None
+    client = _get_qdrant_client() if settings.qdrant_url else None
     QdrantVectorStore: Any = getattr(li_qdrant, "QdrantVectorStore")
     StorageContext: Any = getattr(li, "StorageContext")
     VectorStoreIndex: Any = getattr(li, "VectorStoreIndex")
@@ -172,7 +180,10 @@ def seed_sample_docs():
 
     if not settings.qdrant_url:
         return {"status": "skipped", "reason": "qdrant not configured"}
-    client = QdrantClient(url=settings.qdrant_url)
+    try:
+        client = _get_qdrant_client()
+    except Exception:
+        return {"status": "skipped", "reason": "qdrant client not installed"}
     vs = QdrantVectorStore(client=client, collection_name="docs")
     storage = StorageContext.from_defaults(vector_store=vs)
     docs = [

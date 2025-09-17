@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
@@ -10,6 +11,13 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = "sqlite:///./aurora.db"
+
+    # Coalesce blank/empty env to default sqlite path to avoid SQLAlchemy URL parse errors
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def _normalize_db_url(cls, v: object) -> str:
+        val = str(v or "").strip()
+        return val or "sqlite:///./aurora.db"
 
     # CORS
     allowed_origins: str = "*"

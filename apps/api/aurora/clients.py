@@ -15,9 +15,9 @@ try:
 except Exception:  # noqa: BLE001
 	GraphDatabase = None  # type: ignore
 
-qdrant = QdrantClient(url=settings.qdrant_url) if ("qdrant_client" in globals() and QdrantClient and settings.qdrant_url) else None
+qdrant = QdrantClient(url=settings.qdrant_url) if (QdrantClient is not None and settings.qdrant_url) else None
 meili = (
-	meilisearch.Client(settings.meili_url, settings.meili_master_key)
+	meilisearch.Client(settings.meili_url, (settings.meili_master_key or None))
 	if (meilisearch and settings.meili_url)
 	else None
 )

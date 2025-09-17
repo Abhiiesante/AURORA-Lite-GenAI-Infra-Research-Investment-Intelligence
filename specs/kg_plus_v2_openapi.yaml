@@ -1,0 +1,296 @@
+openapi: 3.0.3
+info:
+  title: AURORA KG+ v2 API (Preview)
+  version: 0.1.0
+  description: Time-travel, provenance-first Knowledge Graph API. Preview schema for Phase 6.
+servers:
+  - url: http://localhost:8000
+paths:
+  /kg/node/{node_id}:
+    get:
+      summary: Get a node view at a point in time with optional neighbors
+      parameters:
+        - name: node_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: as_of
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: depth
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 3
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 200
+      responses:
+        '200':
+          description: Node view
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  as_of:
+                    type: string
+                  node:
+                    type: object
+                  neighbors:
+                    type: array
+                    items:
+                      type: object
+                  edges:
+                    type: array
+                    items:
+                      type: object
+        '404':
+          description: Node not found at requested time
+  /kg/query:
+    post:
+      summary: Query KG by node or list at a point in time
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                at:
+                  type: string
+                node:
+                  type: string
+                limit:
+                  type: integer
+      responses:
+        '200':
+          description: Query result
+  /kg/nodes:
+    get:
+      summary: Batch get nodes at a point in time
+      parameters:
+        - name: ids
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Comma-separated list of node uids
+        - name: as_of
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 200
+      responses:
+        '200':
+          description: Node list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  as_of:
+                    type: string
+                  nodes:
+                    type: array
+                    items:
+                      type: object
+                  offset:
+                    type: integer
+                  limit:
+                    type: integer
+                  next_offset:
+                    type: integer
+  /kg/find:
+    get:
+      summary: Find nodes using simple filters at a point in time
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: uid_prefix
+          in: query
+          schema:
+            type: string
+        - name: prop_contains
+          in: query
+          schema:
+            type: string
+        - name: prop_key
+          in: query
+          schema:
+            type: string
+          description: Whitelisted JSON property key (e.g., name, segment, domain, country, ticker, category)
+        - name: prop_value
+          in: query
+          schema:
+            type: string
+          description: Value to match for prop_key
+        - name: prop_op
+          in: query
+          schema:
+            type: string
+            enum: [contains, eq]
+          description: Operator for prop_key/prop_value match (default contains)
+        - name: as_of
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 200
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Cursor for keyset pagination (preferred over offset)
+      responses:
+        '200':
+          description: Node list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  as_of:
+                    type: string
+                  nodes:
+                    type: array
+                    items:
+                      type: object
+                  offset:
+                    type: integer
+                  limit:
+                    type: integer
+                  next_offset:
+                    type: integer
+                  next_cursor:
+                    type: string
+                    nullable: true
+  /kg/edges:
+    get:
+      summary: List edges for a node at a point in time
+      parameters:
+        - name: uid
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Node uid whose edges to list
+        - name: as_of
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum: [all, out, in]
+            default: all
+          description: Edge direction relative to the node
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Optional edge type filter
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 200
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: Cursor for keyset pagination (preferred over offset)
+      responses:
+        '200':
+          description: Edge list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  as_of:
+                    type: string
+                  edges:
+                    type: array
+                    items:
+                      type: object
+                  offset:
+                    type: integer
+                  limit:
+                    type: integer
+                  next_offset:
+                    type: integer
+                  next_cursor:
+                    type: string
+                    nullable: true
+  /kg/stats:
+    get:
+      summary: KG statistics snapshot
+      responses:
+        '200':
+          description: Stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nodes_total:
+                    type: integer
+                  edges_total:
+                    type: integer
+                  latest_node_created_at:
+                    type: string
+                    nullable: true
+                  latest_edge_created_at:
+                    type: string
+                    nullable: true
+                  limit:
+                    type: integer
+                  next_offset:
+                    type: integer

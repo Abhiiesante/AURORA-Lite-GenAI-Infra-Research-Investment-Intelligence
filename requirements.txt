@@ -1,3 +1,4 @@
+alembic==1.13.3
 fastapi==0.112.2
 uvicorn[standard]==0.30.6
 pydantic==2.9.2
@@ -10,9 +11,5 @@ pytest==8.3.2
 requests==2.32.3
 rapidfuzz==3.9.6
 PyJWT==2.9.0
-fastapi>=0.111.0
-uvicorn>=0.30.0
-pydantic>=2.6.0
-pytest>=8.2.0
-httpx>=0.27.0
-python-multipart>=0.0.9
+sigstore==3.0.0; python_version >= "3.10"  # optional, used when SIGNING_BACKEND=sigstore
+psycopg[binary]==3.2.1

@@ -8,6 +8,13 @@ Run: python scripts/seed_demo_data.py
 from datetime import date, timedelta
 from sqlmodel import Session
 from sqlalchemy import text
+import os, sys
+
+# Ensure repo root on sys.path for direct script execution
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_ROOT = os.path.abspath(os.path.join(_HERE, os.pardir))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 
 try:
     from apps.api.aurora.db import engine, Company, CompanyMetric  # type: ignore
@@ -18,19 +25,19 @@ except Exception:
 def seed():
     with Session(engine) as s:
         # Create companies if not exist
-        pine = s.exec(text("SELECT id FROM companies WHERE canonical_name='Pinecone'"))  # type: ignore[arg-type]
-        pine = pine.first() if pine is not None else None
-        weav = s.exec(text("SELECT id FROM companies WHERE canonical_name='Weaviate'"))  # type: ignore[arg-type]
-        weav = weav.first() if weav is not None else None
-        if not pine:
-            s.exec(text(
+        pine_id = s.execute(text("SELECT id FROM companies WHERE canonical_name='Pinecone'"))  # type: ignore[arg-type]
+        pine_id = pine_id.scalar() if pine_id is not None else None
+        weav_id = s.execute(text("SELECT id FROM companies WHERE canonical_name='Weaviate'"))  # type: ignore[arg-type]
+        weav_id = weav_id.scalar() if weav_id is not None else None
+        if pine_id is None:
+            s.execute(text(
                 """
                 INSERT INTO companies(canonical_name, name, segments, website, hq_country, signal_score)
                 VALUES ('Pinecone', 'Pinecone', 'Vector DB', 'https://www.pinecone.io', 'US', 55)
                 """
             ))  # type: ignore[arg-type]
-        if not weav:
-            s.exec(text(
+        if weav_id is None:
+            s.execute(text(
                 """
                 INSERT INTO companies(canonical_name, name, segments, website, hq_country, signal_score)
                 VALUES ('Weaviate', 'Weaviate', 'Vector DB', 'https://weaviate.io', 'NL', 53)
@@ -39,12 +46,10 @@ def seed():
         s.commit()
 
         # Re-fetch IDs
-        pine_id_row = s.exec(text("SELECT id FROM companies WHERE canonical_name='Pinecone'"))  # type: ignore[arg-type]
-        pine_id_row = pine_id_row.first() if pine_id_row is not None else None
-        weav_id_row = s.exec(text("SELECT id FROM companies WHERE canonical_name='Weaviate'"))  # type: ignore[arg-type]
-        weav_id_row = weav_id_row.first() if weav_id_row is not None else None
-        pine_id = int(pine_id_row[0] if isinstance(pine_id_row, (tuple, list)) else pine_id_row) if pine_id_row is not None else 0
-        weav_id = int(weav_id_row[0] if isinstance(weav_id_row, (tuple, list)) else weav_id_row) if weav_id_row is not None else 0
+        pine_id = s.execute(text("SELECT id FROM companies WHERE canonical_name='Pinecone'"))  # type: ignore[arg-type]
+        pine_id = int(pine_id.scalar() or 0)
+        weav_id = s.execute(text("SELECT id FROM companies WHERE canonical_name='Weaviate'"))  # type: ignore[arg-type]
+        weav_id = int(weav_id.scalar() or 0)
 
         # Insert last 4 weeks of metrics
         start = date.today() - timedelta(days=21)

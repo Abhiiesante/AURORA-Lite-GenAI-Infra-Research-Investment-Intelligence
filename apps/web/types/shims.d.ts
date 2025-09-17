@@ -10,6 +10,7 @@ declare module "react-plotly.js";
 declare module "plotly.js-dist-min";
 declare module "jspdf";
 declare module "html2canvas";
+declare module "cytoscape";
 declare module "react";
 
 declare var process: any;

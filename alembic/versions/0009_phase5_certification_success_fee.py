@@ -13,7 +13,7 @@ Create Date: 2025-09-05
 from alembic import op
 import sqlalchemy as sa
 
-revision = '0009_phase5_certification_success_fee'
+revision = '0009_phase5_cert_success_fee'
 down_revision = '0008_phase5_sovereign_kernel'
 branch_labels = None
 depends_on = None

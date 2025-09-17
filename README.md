@@ -81,8 +81,10 @@ Acceptance checklist (Phase 2):
 
 See docs/ACCEPTANCE.md for how to verify each milestone locally.
 ## Monorepo layout
-- apps/api — FastAPI service (REST + RAG endpoints)
 See docs/PRD.md for detailed requirements and docs/architecture.md for diagrams.
+For optional tooling and extras (e.g., pandas for indexing scripts), see `docs/DEV-EXTRAS.md`.
+- See docs/TESTING.md for quick local testing instructions, including running KG tests with SQLite.
+	- Quick-start external services: see docs/TESTING.md → "Quick-start external services (optional)" for running Postgres/Meilisearch/Qdrant locally and enabling skipped tests.
 
 ## License
 MIT
@@ -267,4 +269,110 @@ E2E smoke (admin):
 4) Attach memo: POST /admin/deal-rooms/{id}/memos/attach?token=...
 5) Export: GET /admin/deal-rooms/{id}/export?format=csv&token=...
 6) Snapshot KG: POST /admin/kg/snapshot?token=...
+
+### Snapshot signing & verification
+
+Backends:
+- HMAC (default): set SIGNING_BACKEND=hmac and AURORA_SNAPSHOT_SIGNING_SECRET
+- Sigstore (optional): set SIGNING_BACKEND=sigstore and install the optional dependency `sigstore`.
+	- Optional envs: SIGSTORE_FULCIO_URL, SIGSTORE_REKOR_URL, SIGSTORE_IDENTITY_TOKEN (for CI)
+
+Admin protection:
+- Set DEV_ADMIN_TOKEN in the environment to enable /admin/* endpoints locally. Provide `X-Dev-Token: <value>` on requests or use `?token=<value>`.
+
+Quick smoke (requires DEV_ADMIN_TOKEN):
+- Run the snapshot smoke to exercise /admin/kg/snapshot and /kg/snapshot/verify
+	- Ensure dependencies are installed (pip install -r requirements.txt)
+	- Set DEV_ADMIN_TOKEN in your shell
+	- Execute: `python scripts/smoke_snapshot.py`
+
+### Tenant retrieval smoke and reset flags
+
+- Reset flags (for clean re-seeds):
+	- Meilisearch: set `RESET_MEILI=1` to delete the `documents` index before re-seeding.
+	- Qdrant:
+		- `RESET_QDRANT_ALL=1` deletes the base collection (fresh start).
+		- `RESET_QDRANT=1` deletes current tenant’s data. In `collection` mode, it drops the per-tenant collection; in `filter` mode, it deletes only the current tenant’s points.
+
+- Seed sample docs (run per tenant):
+	- `PYTHONPATH=. QDRANT_URL=http://localhost:6333 MEILI_URL=http://localhost:7700 AURORA_DEFAULT_TENANT_ID=1 python scripts/index_documents.py`
+	- `PYTHONPATH=. QDRANT_URL=http://localhost:6333 MEILI_URL=http://localhost:7700 AURORA_DEFAULT_TENANT_ID=2 python scripts/index_documents.py`
+
+- Smoke retrieval across tenants:
+	- `PYTHONPATH=. QDRANT_URL=http://localhost:6333 MEILI_URL=http://localhost:7700 python scripts/smoke_retrieval_tenants.py`
+	- Exits non-zero on failure; prints counts per backend per tenant.
+
+### Tenant-aware vector indexing
+
+- Mode is controlled by VECTOR_TENANT_MODE:
+	- filter (default): single Qdrant collection; retrieval filters by tenant_id payload
+	- collection: per-tenant Qdrant collections named `<base>_tenant_<TENANT_ID>`
+- Base collection is set via DOCUMENTS_VEC_COLLECTION_BASE (default: `documents`).
+- Scripts and flows respect these envs:
+	- scripts/index_documents.py (base/default corpus)
+	- flows/index_search.py (news corpus)
+
+	### Tenant-aware vector search
+
+	- Meilisearch: remains single index with filterable attribute `tenant_id`.
+	- Qdrant: two modes controlled by `TENANT_INDEXING_MODE`:
+
+Env knobs summary (Phase 5 retrieval)
+- VECTOR_TENANT_MODE: `filter` (default) | `collection`
+- TENANT_INDEXING_MODE: `filter` (default) | `collection` (alias used by scripts/flows)
+- DOCUMENTS_VEC_COLLECTION_BASE: base collection name (default `documents`)
+- AURORA_DEFAULT_TENANT_ID: current tenant id for indexing/retrieval
+
+Helpful endpoint for quick checks
+- GET `/tools/retrieve_docs?query=...&limit=...` — returns doc IDs and URLs from the retrieval pipeline (respects tenant scoping).
+		- filter (default): single `documents` collection; payload includes `tenant_id` and searches add a filter.
+		- collection: per-tenant collections named `<base>_tenant_<TENANT_ID>` (defaults base to `documents`). Indexers write to per-tenant collection; retrieval queries the tenant’s collection and falls back to the base if missing.
+	- Env knobs:
+		- AURORA_DEFAULT_TENANT_ID: default tenant used by scripts/retrieval without request context
+		- TENANT_INDEXING_MODE: filter|collection
+
+### Sigstore verification (full and offline fallback)
+
+To enable Sigstore-based verification of snapshot bundles:
+
+- Install optional dependency `sigstore` (already in `requirements.txt` with an environment marker).
+- Set `SIGNING_BACKEND=sigstore`.
+- Provide `dsse_bundle_json` when calling `POST /kg/snapshot/verify`.
+- Choose a verification policy:
+  - `SIGSTORE_VERIFY_IDENTITY=mailto:you@example.com` (and optional `SIGSTORE_VERIFY_ISSUER=`) to enforce identity,
+  - or `SIGSTORE_ALLOW_UNSAFE_POLICY=1` to bypass identity checks (not recommended).
+- Optionally set `SIGSTORE_ENV=production|staging` (default: production) and `SIGSTORE_OFFLINE_FALLBACK=1|0` (default: 1) to allow structural checks when online verification isn’t possible.
+
+Behavior:
+- Full verification uses `sigstore.verify.Verifier` to validate the DSSE bundle (Fulcio cert + Rekor inclusion), returns `payload_type`, and checks that `sha256(payload)` equals your `snapshot_hash`.
+- Offline fallback (when enabled) accepts bundles that structurally declare a `payloadSHA256` equal to your `snapshot_hash`.
+
+
+## Phase 6 — Sovereign Ecosystem
+
+The Phase 6 playbook (Sovereign Ecosystem: autonomous scale, global trust, and perpetual moat) is tracked in:
+
+- docs/PHASE6_SOVEREIGN_ECOSYSTEM.md — strategy, architecture, compliance, agents, KG+, CI gates, and GTM artifacts
+
+Use this as the live reference for Phase 6 workstreams and status.
+
+Quick links (Phase 6 artifacts)
+- specs/kg_plus_v2_openapi.yaml — preview OpenAPI for KG+ v2 endpoints
+- agents/temporal/memoist_workflow.yaml — Temporal choreography template
+- agents/temporal/worker_example.py — worker stubs (Python)
+- compliance/soc2_readiness_matrix.md — SOC2 mapping to features/evidence
+- tests/rag_golden_set.json — initial RAG golden tests (structure-only)
+
+New endpoints (in API)
+- GET /kg/node/{node_id}?as_of=...&depth=... — time-travel node view with neighbor expansion and tenant scoping
+ - GET /kg/nodes?ids=...&as_of=...&offset=...&limit=... — batch node fetch at a point in time (tenant/time scoped, returns next_offset)
+ - GET /kg/find?type=...&uid_prefix=...&prop_contains=...&as_of=...&offset=...&limit=... — simple finder with time/tenant scoping and optional JSON-like filters (prop_key/prop_value; contains|eq)
+ - GET /kg/edges?uid=...&as_of=...&direction=all|out|in&type=...&offset=...&limit=... — list edges for a node with time/tenant scoping (returns next_offset)
+ - GET /kg/stats — quick stats (nodes_total, edges_total, latest_node_created_at/edge) with tenant scoping
+
+Pagination notes: /kg/nodes, /kg/find, and /kg/edges support offset/limit and return next_offset when more results are available.
+
+CI smokes
+- Workflow: .github/workflows/kg_smokes.yml runs KG smokes on PRs and pushes.
+- To enable full end-to-end seeding during CI, set a repository secret `DEV_ADMIN_TOKEN`. Without it, smokes run in skip-safe mode and exit successfully without side effects.
 

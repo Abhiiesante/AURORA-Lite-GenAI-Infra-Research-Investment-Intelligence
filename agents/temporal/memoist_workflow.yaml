@@ -1,0 +1,35 @@
+workflow: memoist_workflow_v1
+description: >
+  Fetch candidate entity -> retrieve docs -> compute comps -> LLM memo -> post-validate -> publish or escalate.
+retry_policy:
+  initial_interval: 30s
+  max_interval: 10m
+  max_attempts: 5
+limits:
+  time_budget: 00:30:00
+  per_activity_timeout_seconds: 120
+activities:
+  - name: fetch_entity
+    params:
+      - company_id
+  - name: retrieve_docs
+    params:
+      - company_id
+      - filters
+      - k
+  - name: compute_comps
+    params:
+      - company_id
+  - name: call_llm
+    params:
+      - prompt_template
+      - model
+      - max_tokens
+  - name: post_validate
+    params:
+      - schema
+      - min_sources
+      - faithfulness_threshold
+  - name: publish_or_escalate
+    params:
+      - destination
