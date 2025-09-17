@@ -2,11 +2,18 @@
 
 Status tracker
 - Owner(s): TBD
-- Last updated: 2025-09-14
+- Last updated: 2025-09-17
 - Phase 5: 100% complete (signed snapshots, Sigstore verify + attest, CI E2E, docs)
-- Phase 6 overall: 0% (planning committed; execution not started)
+- Phase 6 overall: 5% (initial KG+ v2 slice implemented: /kg/commit, /kg/node time-travel read, snapshot create)
 - High-level milestones
   - [ ] KG+ v2.0 (time-travel + signed snapshots)
+    - [x] Append-only temporal node/edge model (valid_from/valid_to)
+    - [x] /kg/commit ingest endpoint with provenance recording
+    - [x] /kg/node/{uid}?as_of=… time-travel read (depth=1 outbound edges)
+    - [x] /admin/kg/snapshot/create (placeholder hashing)
+    - [ ] Snapshot signing & public verify endpoint integration
+    - [ ] LakeFS integration for snapshot hash source-of-truth
+    - [ ] GraphQL layer + cypher-like query support
   - [ ] Agent Orchestrator v2 (Temporal)
   - [ ] Federated & Confidential Modes
   - [ ] Outcome Platform v2 (deal rooms + contracts)

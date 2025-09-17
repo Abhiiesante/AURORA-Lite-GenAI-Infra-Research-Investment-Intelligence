@@ -42,20 +42,94 @@ paths:
               schema:
                 type: object
                 properties:
-                  as_of:
-                    type: string
                   node:
                     type: object
-                  neighbors:
-                    type: array
-                    items:
-                      type: object
+                    properties:
+                      id:
+                        type: integer
+                      uid:
+                        type: string
+                      type:
+                        type: string
+                      properties:
+                        type: object
+                      valid_from:
+                        type: string
+                      valid_to:
+                        type: string
+                        nullable: true
                   edges:
                     type: array
+                    description: Outbound edges (depth=1 currently)
                     items:
                       type: object
+                      properties:
+                        id:
+                          type: integer
+                        from:
+                          type: string
+                        to:
+                          type: string
+                        type:
+                          type: string
+                        properties:
+                          type: object
+                        valid_from:
+                          type: string
+                        valid_to:
+                          type: string
+                          nullable: true
+                  provenance:
+                    type: object
+                    nullable: true
+                    properties:
+                      provenance_id:
+                        type: integer
+                      snapshot_hash:
+                        type: string
+                      signed_by:
+                        type: string
+                        nullable: true
+                      pipeline_version:
+                        type: string
+                        nullable: true
+                      model_version:
+                        type: string
+                        nullable: true
+                      created_at:
+                        type: string
         '404':
           description: Node not found at requested time
+  /admin/kg/snapshot/create:
+    post:
+      summary: Create a lightweight KG snapshot hash (placeholder until LakeFS integration)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                signer:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Snapshot metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  snapshot_hash:
+                    type: string
+                  id:
+                    type: integer
+                  count_parts:
+                    type: integer
   /kg/query:
     post:
       summary: Query KG by node or list at a point in time
