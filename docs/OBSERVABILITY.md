@@ -10,32 +10,88 @@ This guide shows what to expect from the observability surfaces and how to read 
 ## Example: /metrics (Prometheus excerpt)
 
 ```
-# HELP aurora_request_total Total HTTP requests
-# TYPE aurora_request_total counter
-aurora_request_total 123
+# HELP aurora_hybrid_cache_hits Total hybrid cache hits
+# TYPE aurora_hybrid_cache_hits counter
+aurora_hybrid_cache_hits 10
 
-# HELP aurora_request_latency_p50_milliseconds 50th percentile request latency
-# TYPE aurora_request_latency_p50_milliseconds gauge
-aurora_request_latency_p50_milliseconds 420
+# HELP aurora_hybrid_cache_misses Total hybrid cache misses
+# TYPE aurora_hybrid_cache_misses counter
+aurora_hybrid_cache_misses 5
 
-# HELP aurora_request_latency_p95_milliseconds 95th percentile request latency
-# TYPE aurora_request_latency_p95_milliseconds gauge
-aurora_request_latency_p95_milliseconds 810
+# HELP aurora_hybrid_cache_size Hybrid cache size
+# TYPE aurora_hybrid_cache_size gauge
+aurora_hybrid_cache_size 7
 
-# HELP aurora_request_latency_p99_milliseconds 99th percentile request latency
-# TYPE aurora_request_latency_p99_milliseconds gauge
-aurora_request_latency_p99_milliseconds 1240
+# HELP aurora_docs_cache_hits Total doc cache hits
+# TYPE aurora_docs_cache_hits counter
+aurora_docs_cache_hits 12
 
-# HELP aurora_error_rate_ratio Error rate over sliding window
-# TYPE aurora_error_rate_ratio gauge
-aurora_error_rate_ratio 0.01
+# HELP aurora_docs_cache_misses Total doc cache misses
+# TYPE aurora_docs_cache_misses counter
+aurora_docs_cache_misses 3
 
-# HELP aurora_cache_hit_ratio Cache hit ratio
-# TYPE aurora_cache_hit_ratio gauge
-aurora_cache_hit_ratio 0.67
+# HELP aurora_docs_cache_size Doc cache size
+# TYPE aurora_docs_cache_size gauge
+aurora_docs_cache_size 4
+
+# HELP aurora_requests_total Total HTTP requests
+# TYPE aurora_requests_total counter
+aurora_requests_total 123
+
+# HELP aurora_request_latency_avg_ms Average request latency (ms)
+# TYPE aurora_request_latency_avg_ms gauge
+aurora_request_latency_avg_ms 503.00
+
+# HELP aurora_request_errors_total Total HTTP error responses
+# TYPE aurora_request_errors_total counter
+aurora_request_errors_total 2
+
+# HELP aurora_request_error_rate Error rate (0-1)
+# TYPE aurora_request_error_rate gauge
+aurora_request_error_rate 0.0163
+
+# HELP aurora_hybrid_cache_hit_ratio Hybrid cache hit ratio (0-1)
+# TYPE aurora_hybrid_cache_hit_ratio gauge
+aurora_hybrid_cache_hit_ratio 0.6667
+
+# HELP aurora_request_latency_p50_ms P50 latency (ms)
+# TYPE aurora_request_latency_p50_ms gauge
+aurora_request_latency_p50_ms 420.00
+
+# HELP aurora_request_latency_p95_ms P95 latency (ms)
+# TYPE aurora_request_latency_p95_ms gauge
+aurora_request_latency_p95_ms 810.00
+
+# HELP aurora_request_latency_p99_ms P99 latency (ms)
+# TYPE aurora_request_latency_p99_ms gauge
+aurora_request_latency_p99_ms 1240.00
+
+# HELP aurora_usage_units_total Total usage units by product for current period
+# TYPE aurora_usage_units_total counter
+aurora_usage_units_total{product="forecast"} 9
+
+# HELP aurora_kg_nodes_total Total KG nodes
+# TYPE aurora_kg_nodes_total gauge
+aurora_kg_nodes_total 0
+
+# HELP aurora_kg_edges_total Total KG edges
+# TYPE aurora_kg_edges_total gauge
+aurora_kg_edges_total 0
+
+# HELP kg_snapshot_hash_total Total snapshot hash computations
+# TYPE kg_snapshot_hash_total counter
+kg_snapshot_hash_total 0
+
+# HELP kg_snapshot_sign_total Total snapshot sign attempts (create)
+# TYPE kg_snapshot_sign_total counter
+kg_snapshot_sign_total 0
+
+# HELP kg_snapshot_verify_total Total snapshot verify attempts
+# TYPE kg_snapshot_verify_total counter
+kg_snapshot_verify_total 0
 ```
 
-Note: Metric names may include additional gauges/counters for caches and evals depending on build and feature flags.
+Note: Metric names include both aurora_* (requests, caches, usage, evals, KG counts) and Phase 6 kg_snapshot_* counters. Some lines may be absent if a feature is disabled or the backing store is unavailable (e.g., doc cache gauges in minimal builds).
 
 ## Example: /dev/metrics (JSON excerpt)
 

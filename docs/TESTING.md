@@ -47,6 +47,22 @@ These tests use an in-memory SQLite DB and a lightweight session wrapper via `te
 /workspaces/YTD/.venv/bin/python -m pytest -q tests/test_phase6_kg_endpoints.py
 ```
 
+## Run snapshot hashing/signing tests (admin + signing env)
+
+Set required environment variables to enable the admin guarded tests and HMAC signing backend:
+
+```bash
+export DEV_ADMIN_TOKEN=devtoken
+export SIGNING_BACKEND=hmac
+export AURORA_SNAPSHOT_SIGNING_SECRET=test-secret
+```
+
+Then run the snapshot tests:
+
+```bash
+/workspaces/YTD/.venv/bin/python -m pytest -q apps/api/tests/test_phase6_snapshots.py
+```
+
 ## Quick-start external services (optional)
 
 Some tests are skipped by default because they require external services. You can spin them up locally with Docker and enable the tests via environment variables.

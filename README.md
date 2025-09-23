@@ -1,5 +1,7 @@
 # AURORA-Lite — GenAI Infra Research & Investment Intelligence (Student Zero-Cost Stack)
 
+[![Observability Smoke](https://github.com/Abhiiesante/YTD/actions/workflows/observability-smoke.yml/badge.svg)](https://github.com/Abhiiesante/YTD/actions/workflows/observability-smoke.yml)
+
 A zero-cost, local-first platform for real-time research on Generative AI infrastructure companies. Ingests open sources, builds a small knowledge graph and vector index, and serves investor-grade briefs with citations using local models.
 Next.js app in `apps/web`. Set `NEXT_PUBLIC_API_URL` to point to the API.
 
@@ -54,6 +56,7 @@ Key endpoints:
  - GET /graph/ego/{company_id}
  - POST /dev/index-local (guarded by DEV_ADMIN_TOKEN)
  - Tools: /tools/retrieve_docs, /tools/company_lookup, /tools/compare_companies (supports window), /tools/trend_snapshot, /tools/detect_entities
+ - GET /kg/graphql — GraphQL schema (mounted when strawberry is available); fallback endpoint returns a descriptive JSON when disabled
 
 All responses include sources[] and strict schemas.
 
@@ -158,6 +161,21 @@ Notes
 - Weekly workflows enforce RAG evals and Market Perf; turn on CI_MARKET_GATE after a few green weekly runs
 - For slow queries, consider adding simple spans around DB calls and increase cache TTLs for market queries (`_cache_set` in API). See docs/RUNBOOKS.md.
 See also docs/OBSERVABILITY.md for example outputs and how to read them.
+
+## Monitoring (/metrics quickstart)
+
+The API exposes Prometheus-style metrics at `/metrics` and JSON diagnostics at `/dev/metrics`.
+
+- Prometheus scrape: point your Prometheus at the API service and set `metrics_path: /metrics`.
+- What you get: request totals, error rate, latency p50/p95/p99, hybrid/doc cache hit/miss/size, usage units by product, and Phase 6 `kg_snapshot_*` counters.
+
+Quick check while developing:
+
+```bash
+curl -s http://127.0.0.1:8000/metrics | head -n 30
+```
+
+Details and examples live in `docs/OBSERVABILITY.md`.
 
 RBAC & Audit
 - Endpoints under /dev/* may be guarded by `DEV_ADMIN_TOKEN`; provide `?token=...` or header `X-Dev-Token: ...`.
@@ -358,10 +376,13 @@ Use this as the live reference for Phase 6 workstreams and status.
 
 Quick links (Phase 6 artifacts)
 - specs/kg_plus_v2_openapi.yaml — preview OpenAPI for KG+ v2 endpoints
+- docs/openapi.yaml — docs-hosted OpenAPI (kept in sync with specs file)
+- Postman collection — generate via: python scripts/generate_postman_collection.py (writes tmp/aurora_kg_v2.postman_collection.json)
 - agents/temporal/memoist_workflow.yaml — Temporal choreography template
 - agents/temporal/worker_example.py — worker stubs (Python)
 - compliance/soc2_readiness_matrix.md — SOC2 mapping to features/evidence
 - tests/rag_golden_set.json — initial RAG golden tests (structure-only)
+ - docs/ACCEPTANCE.md — Phase 6 acceptance steps and checklist (operator view)
 
 New endpoints (in API)
 - GET /kg/node/{node_id}?as_of=...&depth=... — time-travel node view with neighbor expansion and tenant scoping
@@ -375,4 +396,41 @@ Pagination notes: /kg/nodes, /kg/find, and /kg/edges support offset/limit and re
 CI smokes
 - Workflow: .github/workflows/kg_smokes.yml runs KG smokes on PRs and pushes.
 - To enable full end-to-end seeding during CI, set a repository secret `DEV_ADMIN_TOKEN`. Without it, smokes run in skip-safe mode and exit successfully without side effects.
+
+### Phase 6 quickstart (local)
+
+Admin and signing envs (for snapshot flows):
+
+```bash
+export DEV_ADMIN_TOKEN=devtoken
+export SIGNING_BACKEND=hmac
+export AURORA_SNAPSHOT_SIGNING_SECRET=test-secret
+```
+
+Start backing services (optional) and API:
+
+```bash
+# VS Code tasks: "Services: Up (postgres+meili+qdrant)" then "API: Run (uvicorn)"
+# Or run API only with SQLite (no external services required for basic KG tests)
+```
+
+Exercise snapshot flows:
+
+```bash
+# Create snapshot
+curl -s -X POST "http://127.0.0.1:8000/admin/kg/snapshot?token=$DEV_ADMIN_TOKEN" | jq
+
+# Sign snapshot
+curl -s -X POST http://127.0.0.1:8000/admin/kg/snapshot/sign?token=$DEV_ADMIN_TOKEN \
+	-H 'content-type: application/json' -d '{"snapshot_hash":"<hash>"}' | jq
+
+# Verify
+curl -s -X POST http://127.0.0.1:8000/kg/snapshot/verify \
+	-H 'content-type: application/json' -d '{"snapshot_hash":"<hash>","signature":"<sig>"}' | jq
+
+# Metrics
+curl -s http://127.0.0.1:8000/metrics | grep kg_snapshot
+```
+
+Spec alignment: see `specs/kg_plus_v2_openapi.yaml` for response fields including `merkle_root`.
 

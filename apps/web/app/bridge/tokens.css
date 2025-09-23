@@ -1,0 +1,14 @@
+:root{
+  --bg-00:#05070A;
+  --bg-01:linear-gradient(180deg,#05070A 0%, #0B1220 100%);
+  --aurora-cyan:#00F0FF;
+  --nebula-violet:#B266FF;
+  --solar-amber:#FFB86B;
+  --solar-alert:#FF7A00;
+  --starlight:#E6EEFC;
+  --glass-blur:12px;
+  --card-ease:cubic-bezier(.16,.84,.24,1);
+  --micro-ease:cubic-bezier(.2,.9,.3,1);
+}
+
+html,body{background:#05070A;color:var(--starlight)}

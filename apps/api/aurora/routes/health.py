@@ -38,7 +38,14 @@ def seed():
     except Exception:
         try:
             if qdrant:
-                from qdrant_client.models import Distance, VectorParams
+                try:
+                    from qdrant_client.models import Distance, VectorParams  # type: ignore[import-not-found]
+                except Exception:  # pragma: no cover - optional dependency not present
+                    Distance = None  # type: ignore[assignment]
+                    VectorParams = None  # type: ignore[assignment]
+                if Distance is None or VectorParams is None:
+                    # can't create vector config without models; skip quietly
+                    raise Exception("qdrant optional deps missing")
                 qdrant.create_collection(
                     collection_name="docs",
                     vectors_config={

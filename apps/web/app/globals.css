@@ -7,6 +7,26 @@
   --orange:#ff7a00; /* solar flare */
   --glass: rgba(255,255,255,0.06);
   --glass-strong: rgba(255,255,255,0.12);
+  /* Command-K overlay tokens (Page 7) */
+  --overlay-bg: rgba(4,6,10,0.56);
+  --glass-blur: 14px;
+  --accent-cyan: #00F0FF;
+  --accent-violet: #B266FF;
+  --starlight: #E6EEFC;
+  --micro-ease: cubic-bezier(.2,.9,.3,1);
+  --standard-ease: cubic-bezier(.16,.84,.24,1);
+  --overlay-drop-duration: 300ms;
+  --suggestion-hover-duration: 140ms;
+  --focus-ring: 0 0 0 4px rgba(0,240,255,0.12);
+  /* Dossier tokens */
+  --dossier-bg: linear-gradient(180deg,#071017 0%,#0b1220 100%);
+  --dossier-glass: rgba(255,255,255,0.04);
+  --dossier-accent: #00F0FF;
+  --dossier-warning: #FFB86B;
+  --dossier-text: #E6EEFC;
+  --dossier-card-blur: 14px;
+  --dossier-ease: cubic-bezier(.16,.84,.24,1);
+  --dossier-micro-ease: cubic-bezier(.2,.9,.3,1);
   /* Motion tokens */
   --ease-micro: cubic-bezier(.2,.9,.3,1);
   --ease-std: cubic-bezier(.16,.84,.24,1);
@@ -47,6 +67,15 @@ body{
   box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset, 0 10px 30px rgba(0,0,0,0.35);
   border-radius: 14px;
 }
+.dossier-glass{
+  background: var(--dossier-glass);
+  border: 1px solid rgba(255,255,255,0.10);
+  backdrop-filter: blur(var(--dossier-card-blur));
+  -webkit-backdrop-filter: blur(var(--dossier-card-blur));
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.05) inset, 0 12px 36px rgba(0,0,0,0.45);
+  border-radius: 16px;
+}
+.dossier-header-title{ font-family: 'Orbitron', 'Exo 2', ui-sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
 .neon{
   text-shadow: 0 0 8px rgba(0,240,255,0.9), 0 0 14px rgba(178,102,255,0.8);
 }
@@ -123,18 +152,41 @@ body{
 .hero-vignette{ position:absolute; inset:-2px; pointer-events:none; border-radius:16px; box-shadow: inset 0 0 120px rgba(0,0,0,0.55); opacity:0; transition: opacity var(--t-std) var(--ease-std); }
 
 /* Command-K overlay */
-.cmdk-overlay{ position:fixed; inset:0; background: rgba(5,7,10,0.55); backdrop-filter: blur(8px); display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; z-index:50; }
-.cmdk-panel{ width: min(940px, 92vw); border-radius:16px; padding:14px; box-shadow: 0 30px 120px rgba(0,240,255,0.12), 0 0 0 1px rgba(255,255,255,0.06) inset; animation: slideDown .25s ease; display:grid; grid-template-columns: 1fr 280px; gap:12px; }
-.cmdk-input{ width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.06); color:var(--text); outline:none; margin-bottom:10px; }
+.cmdk-overlay{
+  position:fixed; inset:0;
+  background: var(--overlay-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  display:flex; align-items:flex-start; justify-content:center;
+  padding-top:12vh; z-index:50;
+}
+.cmdk-panel{
+  width: min(940px, 92vw);
+  border-radius:16px; padding:14px;
+  box-shadow: 0 30px 120px rgba(0,240,255,0.12), 0 0 0 1px rgba(255,255,255,0.06) inset;
+  animation: slideDown var(--overlay-drop-duration) var(--standard-ease);
+  display:grid; grid-template-columns: 1fr 280px; gap:12px;
+}
+.cmdk-input{
+  width:100%; padding:12px 14px; border-radius:12px;
+  border:1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06); color:var(--text);
+  outline:none; margin-bottom:10px;
+}
 .cmdk-list{ display:flex; flex-direction:column; gap:8px; max-height:46vh; overflow:auto; padding-right:4px; }
-.cmdk-item{ display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:12px; text-decoration:none; color:var(--text); background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
-.cmdk-item:hover{ transform: translateZ(0) scale(1.01); box-shadow: 0 12px 40px rgba(0,240,255,0.12); background: rgba(255,255,255,0.08); }
+.cmdk-item{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 12px; border-radius:12px; text-decoration:none; color:var(--text);
+  background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06);
+  transition: transform var(--suggestion-hover-duration) var(--micro-ease), box-shadow var(--suggestion-hover-duration) var(--micro-ease), background var(--suggestion-hover-duration) var(--micro-ease);
+}
+.cmdk-item:hover{ transform: translateZ(0) scale(1.02); box-shadow: 0 12px 40px rgba(0,240,255,0.14); background: rgba(255,255,255,0.08); }
 .cmdk-label{ font-weight:600 }
 .cmdk-k{ opacity:0.7; font-family: "Roboto Mono", ui-monospace, monospace }
 .cmdk-preview{ border:1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); border-radius:12px; padding:10px; display:flex; align-items:center; justify-content:center; min-height: 220px; }
 .cmdk-preview .preview-box{ width:100%; height:100%; border-radius:10px; background: radial-gradient(60% 60% at 40% 35%, rgba(0,240,255,0.25), rgba(178,102,255,0.20)); box-shadow: inset 0 0 80px rgba(0,0,0,0.35); display:flex; align-items:center; justify-content:center; font-weight:700 }
 .cmdk-hint{ opacity:0.6; font-size:12px; margin-top:8px; text-align:right; grid-column: 1 / -1 }
-@keyframes slideDown{ from{ transform: translateY(-8px); opacity:0 } to{ transform: translateY(0); opacity:1 } }
+@keyframes slideDown{ from{ transform: translateY(-18px); opacity:0 } to{ transform: translateY(0); opacity:1 } }
 
 @media (max-width: 720px){
   .cmdk-panel{ grid-template-columns: 1fr; }
@@ -148,6 +200,14 @@ body{
   .ticker span{ animation: none !important; }
 }
 
+/* Explicit reduced motion toggle */
+html.reduce-motion *{
+  animation: none !important;
+  transition: none !important;
+}
+html.reduce-motion .aurora::before{ animation: none !important; }
+html.reduce-motion .ticker span{ animation: none !important; }
+
 /* Skeletons */
 .skeleton{ position:relative; overflow:hidden; background: rgba(255,255,255,0.06); border-radius:14px; min-height: 280px; }
 .skeleton::after{
@@ -156,3 +216,7 @@ body{
   animation: shimmer 1.2s infinite;
 }
 @keyframes shimmer{ 100% { transform: translateX(100%);} }
+
+/* Micro orbit spinner */
+.spinner{ width:18px; height:18px; border-radius:999px; border:2px solid rgba(0,240,255,0.3); border-top-color: var(--cyan); animation: spin .8s linear infinite; }
+@keyframes spin{ to { transform: rotate(360deg) } }

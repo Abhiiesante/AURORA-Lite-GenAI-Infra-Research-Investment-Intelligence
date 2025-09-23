@@ -1,10 +1,28 @@
-# API Dockerfile
-FROM python:3.11-slim
+# API Dockerfile (production)
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+	PYTHONUNBUFFERED=1 \
+	PIP_NO_CACHE_DIR=1
+
+# Create non-root user
+RUN adduser --disabled-password --gecos "" --uid 10001 app
+
 WORKDIR /app
-ENV POETRY_VERSION=1.8.3
-RUN pip install --no-cache-dir poetry==${POETRY_VERSION}
-COPY pyproject.toml poetry.lock* ./
-RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi --no-root
-COPY . .
+
+# Install runtime deps
+COPY requirements.txt /app/requirements.txt
+RUN pip install --upgrade pip && pip install -r /app/requirements.txt
+
+# Copy application code
+COPY apps/api/aurora /app/aurora
+COPY apps/api/prestart.sh /app/prestart.sh
+RUN chmod +x /app/prestart.sh
+
 EXPOSE 8000
-CMD ["uvicorn", "aurora.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENV PORT=8000
+
+USER app
+
+# Run prestart to perform light checks/migrations if desired; then start app
+CMD ["bash", "-lc", "/app/prestart.sh && uvicorn aurora.main:app --host 0.0.0.0 --port ${PORT}"]

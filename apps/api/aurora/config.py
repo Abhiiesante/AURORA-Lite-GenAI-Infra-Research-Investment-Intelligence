@@ -19,8 +19,21 @@ class Settings(BaseSettings):
         val = str(v or "").strip()
         return val or "sqlite:///./aurora.db"
 
-    # CORS
+    # CORS (CSV of origins). Back-compat: `allowed_origins` used by existing code.
     allowed_origins: str = "*"
+    cors_allow_credentials: bool = False
+    cors_allow_methods: str = "*"  # CSV or '*'
+    cors_allow_headers: str = "*"  # CSV or '*'
+
+    # Security/production hardening
+    security_headers_enabled: bool = True
+    content_security_policy: str | None = None  # If None, set a safe default for APIs
+    hsts_enabled: bool = True
+    hsts_max_age: int = 31536000  # 1 year
+    trusted_hosts: str | None = None  # CSV list; if None/empty, middleware disabled
+    request_max_body_bytes: int = 2 * 1024 * 1024  # 2MB default
+    gzip_enabled: bool = True
+    gzip_min_size: int = 500  # bytes
 
     # Service URLs (lowercase properties to match existing code)
     qdrant_url: Optional[str] = None

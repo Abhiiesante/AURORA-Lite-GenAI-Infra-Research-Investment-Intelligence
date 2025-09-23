@@ -1,3 +1,4 @@
 # Optional developer dependencies for non-core scripts
 pandas>=2.0
 pyarrow>=15.0
+PyYAML>=6.0

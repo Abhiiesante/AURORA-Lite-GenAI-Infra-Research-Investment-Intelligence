@@ -1,0 +1,718 @@
+## NOTE: This file is a direct copy of specs/kg_plus_v2_openapi.yaml. Keep them in sync.
+openapi: 3.0.3
+info:
+	title: AURORA KG+ v2 API (Preview)
+	version: 0.1.0
+	description: Time-travel, provenance-first Knowledge Graph API. Preview schema for Phase 6.
+servers:
+	- url: http://localhost:8000
+paths:
+	/kg/node/{node_id}:
+		get:
+			summary: Get a node view at a point in time with optional neighbors
+			parameters:
+				- name: node_id
+					in: path
+					required: true
+					schema:
+						type: string
+				- name: as_of
+					in: query
+					schema:
+						type: string
+						format: date-time
+				- name: depth
+				- name: edges_offset
+					in: query
+					schema:
+						type: integer
+						minimum: 0
+						default: 0
+					description: Offset for outbound edges pagination
+				- name: edges_limit
+					in: query
+					schema:
+						type: integer
+						minimum: 1
+						maximum: 1000
+						default: 200
+					description: Page size for outbound edges
+					in: query
+					schema:
+						type: integer
+						minimum: 1
+						maximum: 1000
+						default: 200
+			responses:
+				'200':
+					description: Node view
+					content:
+						application/json:
+							schema:
+								type: object
+								properties:
+									node:
+										type: object
+										properties:
+											id:
+												type: integer
+											uid:
+												type: string
+											type:
+												type: string
+											properties:
+												type: object
+											valid_from:
+												type: string
+											valid_to:
+												type: string
+												nullable: true
+									edges:
+										type: array
+										description: Outbound edges (depth=1 currently)
+										items:
+											type: object
+											properties:
+												id:
+													type: integer
+												from:
+													type: string
+												to:
+													type: string
+												type:
+													type: string
+												properties:
+									edges_offset:
+										type: integer
+									edges_limit:
+										type: integer
+									next_edges_offset:
+										type: integer
+										nullable: true
+													type: object
+												valid_from:
+													type: string
+												valid_to:
+													type: string
+													nullable: true
+									provenance:
+										type: object
+										nullable: true
+										properties:
+											provenance_id:
+												type: integer
+											snapshot_hash:
+												type: string
+											signed_by:
+												type: string
+												nullable: true
+											prompt_version:
+												type: string
+												nullable: true
+											retrieval_trace:
+												type: array
+												items:
+													type: object
+											decision_events:
+												type: array
+												items:
+													type: object
+											pipeline_version:
+												type: string
+												nullable: true
+											model_version:
+	/kg/node/{node_id}/diff:
+		get:
+			summary: Diff a node between two instants
+			parameters:
+				- name: node_id
+					in: path
+					required: true
+					schema:
+						type: string
+				- name: from
+					in: query
+					required: true
+					schema:
+						type: string
+						format: date-time
+				- name: to
+					in: query
+					required: true
+					schema:
+						type: string
+						format: date-time
+			responses:
+				'200':
+					description: Diff result
+					content:
+						application/json:
+							schema:
+								type: object
+								properties:
+									node_id:
+										type: string
+									from:
+										type: string
+									to:
+										type: string
+									properties_diff:
+										type: object
+										properties:
+											added:
+												type: object
+											removed:
+												type: object
+											changed:
+												type: object
+									edges_diff:
+										type: object
+										properties:
+											added:
+												type: array
+												items:
+													type: object
+											removed:
+												type: array
+												items:
+													type: object
+											changed:
+												type: array
+												items:
+													type: object
+									provenance:
+										type: object
+										nullable: true
+												type: string
+												nullable: true
+											created_at:
+												type: string
+				'404':
+					description: Node not found at requested time
+	/admin/kg/snapshot/create:
+		post:
+			summary: Create a lightweight KG snapshot hash (placeholder until LakeFS integration)
+			requestBody:
+				required: false
+				content:
+					application/json:
+						schema:
+							type: object
+							properties:
+								signer:
+									type: string
+								notes:
+									type: string
+			responses:
+				'200':
+					description: Snapshot metadata
+					content:
+						application/json:
+							schema:
+								type: object
+								properties:
+									at:
+										type: string
+										description: ISO timestamp when snapshot was computed
+									hash:
+										type: string
+										description: Alias of snapshot_hash for backward compatibility
+									snapshot_hash:
+										type: string
+										description: Deterministic hash over canonicalized nodes+edges payload
+									merkle_root:
+										type: string
+										nullable: true
+										description: Merkle root built over ordered leaf hashes (future partial proof support)
+									signer:
+										type: string
+										nullable: true
+									notes:
+										type: string
+										nullable: true
+									signature:
+										type: string
+										nullable: true
+									signature_backend:
+										type: string
+										nullable: true
+									dsse_bundle_json:
+										type: string
+										nullable: true
+									rekor_log_id:
+										type: string
+										nullable: true
+									rekor_log_index:
+										type: integer
+										nullable: true
+									node_count:
+										type: integer
+										description: Convenience count of nodes (not part of hashed payload)
+									edge_count:
+										type: integer
+										description: Convenience count of edges (not part of hashed payload)
+	/admin/kg/snapshot:
+		post:
+			summary: Alias of /admin/kg/snapshot/create (backward compatibility)
+			responses:
+				'200':
+					description: Snapshot metadata (same schema as create)
+	/admin/kg/snapshot/sign:
+		post:
+			summary: Generate or regenerate a snapshot signature (HMAC or Sigstore placeholder)
+			requestBody:
+				required: true
+				content:
+					application/json:
+						schema:
+							type: object
+							required: [snapshot_hash]
+							properties:
+								snapshot_hash:
+									type: string
+								force:
+									type: boolean
+									default: false
+			responses:
+				'200':
+					description: Signature response
+					content:
+						application/json:
+							schema:
+								type: object
+								properties:
+									snapshot_hash:
+										type: string
+									signature:
+										type: string
+										nullable: true
+									signature_backend:
+										type: string
+										nullable: true
+									signer:
+										type: string
+										nullable: true
+									regenerated:
+										type: boolean
+									merkle_root:
+										type: string
+										nullable: true
+										description: Optional Merkle root if looked up during signing (not always present)
+	/admin/kg/snapshot/attest:
+		post:
+			summary: Attach Sigstore attestation bundle and related metadata to a snapshot
+			requestBody:
+				required: true
+				content:
+					application/json:
+						schema:
+							type: object
+							required: [snapshot_hash]
+							properties:
+								snapshot_hash:
+									type: string
+								signature:
+									type: string
+									nullable: true
+								cert_chain_pem:
+									type: string
+									nullable: true
+								dsse_bundle_json:
+									type: string
+									nullable: true
+								rekor_log_id:
+									type: string
+									nullable: true
+								rekor_log_index:
+									type: integer
+									nullable: true
+								signature_backend:
+									type: string
+									nullable: true
+			responses:
+				'200':
+					description: Attestation update result
+	/kg/snapshot/verify:
+		post:
+			summary: Verify a snapshot signature (HMAC or Sigstore structural/full)
+			requestBody:
+				required: true
+				content:
+					application/json:
+						schema:
+							type: object
+							required: [snapshot_hash]
+							properties:
+								snapshot_hash:
+									type: string
+								signature:
+									type: string
+									nullable: true
+								backend:
+									type: string
+									nullable: true
+								cert_chain_pem:
+									type: string
+									nullable: true
+								dsse_bundle_json:
+									type: string
+									nullable: true
+								rekor_log_id:
+									type: string
+									nullable: true
+								rekor_log_index:
+									type: integer
+									nullable: true
+			responses:
+				'200':
+					description: Verification result
+					content:
+						application/json:
+							schema:
+								type: object
+								properties:
+									valid:
+										type: boolean
+									backend:
+										type: string
+									reason:
+										type: string
+										nullable: true
+	/kg/snapshot/{snapshot_hash}/verify:
+		post:
+			summary: Path variant of snapshot verification
+			parameters:
+				- name: snapshot_hash
+					in: path
+					required: true
+					schema:
+						type: string
+			requestBody:
+				required: false
+				content:
+					application/json:
+						schema:
+							type: object
+							properties:
+								signature:
+									type: string
+									nullable: true
+								backend:
+									type: string
+									nullable: true
+								cert_chain_pem:
+									type: string
+									nullable: true
+								dsse_bundle_json:
+									type: string
+									nullable: true
+								rekor_log_id:
+									type: string
+									nullable: true
+								rekor_log_index:
+									type: integer
+									nullable: true
+			responses:
+				'200':
+					description: Verification result (same schema as /kg/snapshot/verify)
+	/admin/kg/snapshots:
+		get:
+			summary: List recent snapshots
+			parameters:
+				- name: limit
+					in: query
+					schema:
+						type: integer
+						default: 20
+			responses:
+				'200':
+					description: Snapshot list
+					content:
+						application/json:
+							schema:
+								type: object
+								properties:
+									snapshots:
+										type: array
+										items:
+											type: object
+											properties:
+												at:
+													type: string
+												snapshot_hash:
+													type: string
+												merkle_root:
+													type: string
+													nullable: true
+												signer:
+													type: string
+													nullable: true
+												created_at:
+													type: string
+	/metrics:
+		get:
+			summary: Prometheus metrics exposition (plain text)
+			responses:
+				'200':
+					description: Prometheus plaintext metrics
+					content:
+						text/plain:
+							schema:
+								type: string
+	/kg/graphql:
+		post:
+			summary: GraphQL endpoint (if enabled) for querying nodes/edges (preview)
+			requestBody:
+				required: true
+				content:
+					application/json:
+						schema:
+							type: object
+							properties:
+								query:
+									type: string
+								variables:
+									type: object
+									nullable: true
+			responses:
+				'200':
+					description: GraphQL execution result
+  
+	/kg/query:
+		post:
+			summary: Query KG by node or list at a point in time
+			requestBody:
+				required: true
+				content:
+					application/json:
+						schema:
+							type: object
+							properties:
+								at:
+									type: string
+								node:
+									type: string
+								limit:
+									type: integer
+			responses:
+				'200':
+					description: Query result
+	/kg/nodes:
+		get:
+			summary: Batch get nodes at a point in time
+			parameters:
+				- name: ids
+					in: query
+					required: true
+					schema:
+						type: string
+					description: Comma-separated list of node uids
+				- name: as_of
+					in: query
+					schema:
+						type: string
+						format: date-time
+				- name: offset
+					in: query
+					schema:
+						type: integer
+						minimum: 0
+						default: 0
+				- name: limit
+					in: query
+					schema:
+						type: integer
+						minimum: 1
+						maximum: 1000
+						default: 200
+			responses:
+				'200':
+					description: Node list
+					content:
+						application/json:
+							schema:
+								type: object
+								properties:
+									as_of:
+										type: string
+									nodes:
+										type: array
+										items:
+											type: object
+									offset:
+										type: integer
+									limit:
+										type: integer
+									next_offset:
+										type: integer
+	/kg/find:
+		get:
+			summary: Find nodes using simple filters at a point in time
+			parameters:
+				- name: type
+					in: query
+					schema:
+						type: string
+				- name: uid_prefix
+					in: query
+					schema:
+						type: string
+				- name: prop_contains
+					in: query
+					schema:
+						type: string
+				- name: prop_key
+					in: query
+					schema:
+						type: string
+					description: Whitelisted JSON property key (e.g., name, segment, domain, country, ticker, category)
+				- name: prop_value
+					in: query
+					schema:
+						type: string
+					description: Value to match for prop_key
+				- name: prop_op
+					in: query
+					schema:
+						type: string
+						enum: [contains, eq]
+					description: Operator for prop_key/prop_value match (default contains)
+				- name: as_of
+					in: query
+					schema:
+						type: string
+						format: date-time
+				- name: limit
+					in: query
+					schema:
+						type: integer
+						minimum: 1
+						maximum: 1000
+						default: 200
+				- name: offset
+					in: query
+					schema:
+						type: integer
+						minimum: 0
+						default: 0
+				- name: cursor
+					in: query
+					schema:
+						type: string
+					description: Cursor for keyset pagination (preferred over offset)
+			responses:
+				'200':
+					description: Node list
+					content:
+						application/json:
+							schema:
+								type: object
+								properties:
+									as_of:
+										type: string
+									nodes:
+										type: array
+										items:
+											type: object
+									offset:
+										type: integer
+									limit:
+										type: integer
+									next_offset:
+										type: integer
+									next_cursor:
+										type: string
+										nullable: true
+	/kg/edges:
+		get:
+			summary: List edges for a node at a point in time
+			parameters:
+				- name: uid
+					in: query
+					required: true
+					schema:
+						type: string
+					description: Node uid whose edges to list
+				- name: as_of
+					in: query
+					schema:
+						type: string
+						format: date-time
+				- name: direction
+					in: query
+					schema:
+						type: string
+						enum: [all, out, in]
+						default: all
+					description: Edge direction relative to the node
+				- name: type
+					in: query
+					schema:
+						type: string
+					description: Optional edge type filter
+				- name: offset
+					in: query
+					schema:
+						type: integer
+						minimum: 0
+						default: 0
+				- name: limit
+					in: query
+					schema:
+						type: integer
+						minimum: 1
+						maximum: 1000
+						default: 200
+				- name: cursor
+					in: query
+					schema:
+						type: string
+					description: Cursor for keyset pagination (preferred over offset)
+			responses:
+				'200':
+					description: Edge list
+					content:
+						application/json:
+							schema:
+								type: object
+								properties:
+									as_of:
+										type: string
+									edges:
+										type: array
+										items:
+											type: object
+									offset:
+										type: integer
+									limit:
+										type: integer
+									next_offset:
+										type: integer
+									next_cursor:
+										type: string
+										nullable: true
+	/kg/stats:
+		get:
+			summary: KG statistics snapshot
+			responses:
+				'200':
+					description: Stats
+					content:
+						application/json:
+							schema:
+								type: object
+								properties:
+									nodes_total:
+										type: integer
+									edges_total:
+										type: integer
+									latest_node_created_at:
+										type: string
+										nullable: true
+									latest_edge_created_at:
+										type: string
+										nullable: true
+									limit:
+										type: integer
+									next_offset:
+										type: integer

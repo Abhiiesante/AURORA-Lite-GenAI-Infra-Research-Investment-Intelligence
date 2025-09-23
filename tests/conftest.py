@@ -6,6 +6,9 @@ from pathlib import Path
 
 from sqlmodel import Session, create_engine
 
+# Force an in-process SQLite DATABASE_URL for any code that reads env before monkeypatch
+os.environ.setdefault("DATABASE_URL", "sqlite:///./aurora.db")
+
 # Create a lightweight SQLite DB for KG endpoint tests.
 # Use a file-based DB to persist across connections during the test session.
 TMP_DIR = Path(os.environ.get("PYTEST_TMP", ".")) / "tmp"
@@ -14,13 +17,33 @@ DB_PATH = TMP_DIR / "kg_test.sqlite"
 ENGINE = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
 
 # Create minimal schema used by the tests and endpoints under test
+def _wait_for_postgres_if_configured():
+    url = os.environ.get("DATABASE_URL", "").lower()
+    if not url.startswith("postgresql"):
+        return
+    import time, socket, re
+    m = re.search(r"@([^/:]+):(\d+)", url)
+    host, port = (m.group(1), int(m.group(2))) if m else ("localhost", 5432)
+    deadline = time.time() + 8
+    while time.time() < deadline:
+        try:
+            with socket.create_connection((host, port), timeout=1):
+                return
+        except Exception:
+            time.sleep(0.4)
+    print(f"[tests] WARNING: Postgres not reachable at {host}:{port} before timeout; tests may fallback/skip", flush=True)
+
+_wait_for_postgres_if_configured()
 with ENGINE.connect() as conn:
+    # Always drop and recreate temporal tables to avoid stale schemas (e.g. prior UNIQUE constraint on uid)
+    conn.exec_driver_sql("DROP TABLE IF EXISTS kg_nodes;")
+    conn.exec_driver_sql("DROP TABLE IF EXISTS kg_edges;")
     conn.exec_driver_sql(
         """
-        CREATE TABLE IF NOT EXISTS kg_nodes (
+        CREATE TABLE kg_nodes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             tenant_id INTEGER NULL,
-            uid TEXT NOT NULL UNIQUE,
+            uid TEXT NOT NULL,
             type TEXT,
             properties_json TEXT,
             valid_from TEXT,
@@ -30,9 +53,10 @@ with ENGINE.connect() as conn:
         );
         """
     )
+    conn.exec_driver_sql("CREATE INDEX ix_kg_nodes_uid ON kg_nodes(uid);")
     conn.exec_driver_sql(
         """
-        CREATE TABLE IF NOT EXISTS kg_edges (
+        CREATE TABLE kg_edges (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             tenant_id INTEGER NULL,
             src_uid TEXT,
@@ -43,6 +67,40 @@ with ENGINE.connect() as conn:
             valid_to TEXT,
             provenance_id INTEGER NULL,
             created_at TEXT
+        );
+        """
+    )
+    # Minimal provenance tables for provenance bundle helper safety
+    conn.exec_driver_sql(
+        """
+        CREATE TABLE IF NOT EXISTS provenance_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ingest_event_id TEXT NULL,
+            snapshot_hash TEXT NULL,
+            signer TEXT NULL,
+            pipeline_version TEXT NULL,
+            model_version TEXT NULL,
+            evidence_json TEXT NULL,
+            doc_urls_json TEXT NULL,
+            created_at TEXT NULL
+        );
+        """
+    )
+    conn.exec_driver_sql(
+        """
+        CREATE TABLE IF NOT EXISTS kg_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            at_ts TEXT,
+            snapshot_hash TEXT,
+            signer TEXT NULL,
+            signature TEXT NULL,
+            signature_backend TEXT NULL,
+            cert_chain_pem TEXT NULL,
+            dsse_bundle_json TEXT NULL,
+            rekor_log_id TEXT NULL,
+            rekor_log_index INTEGER NULL,
+            notes TEXT NULL,
+            created_at TEXT NULL
         );
         """
     )

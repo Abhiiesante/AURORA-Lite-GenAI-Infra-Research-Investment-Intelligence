@@ -1,0 +1,164 @@
+/* Page 4 - Memo Visual System Tokens */
+/* Core palette */
+:root {
+  --bg-00: #05070A;
+  --bg-01: linear-gradient(180deg, #05070A 0%, #0B1220 100%);
+  --aurora-cyan: #00F0FF;
+  --nebula-violet: #B266FF;
+  --solar-amber: #FFB86B;
+  --starlight: #E6EEFC;
+
+  /* Memo-specific tokens */
+  --memo-bg: rgba(255, 255, 255, 0.02);
+  --memo-glass-blur: 14px;
+  --memo-card-radius: 14px;
+  --memo-ease: cubic-bezier(0.16, 0.84, 0.24, 1);
+  --micro-ease: cubic-bezier(0.2, 0.9, 0.3, 1);
+
+  /* Typography scales */
+  --title-size: 44px;
+  --numeric-size: 32px;
+  --copy-size: 15px;
+  --claim-size: 16px;
+  --caption-size: 13px;
+
+  /* Spacing system */
+  --memo-padding: 24px;
+  --claim-padding: 20px;
+  --micro-padding: 8px;
+  --section-gap: 32px;
+
+  /* Shadows and depth */
+  --memo-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --claim-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --micro-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+  /* Interactive states */
+  --hover-lift: -2px;
+  --active-scale: 0.98;
+  --focus-ring: 0 0 0 2px var(--aurora-cyan);
+
+  /* Confidence gauge colors */
+  --confidence-low: #FF6B6B;
+  --confidence-med: var(--solar-amber);
+  --confidence-high: #51CF66;
+
+  /* Provenance colors */
+  --verified-green: #51CF66;
+  --warning-amber: var(--solar-amber);
+  --error-red: #FF6B6B;
+}
+
+/* Paper grain texture for memo background */
+.memo-paper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.02) 0%, transparent 50%);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* Glass morphism base */
+.memo-glass {
+  background: var(--memo-bg);
+  backdrop-filter: blur(var(--memo-glass-blur));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--memo-card-radius);
+  box-shadow: var(--memo-shadow);
+}
+
+/* Inner bevel for page thickness effect */
+.memo-page {
+  position: relative;
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.1),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+    var(--memo-shadow);
+}
+
+/* Aurora rim glow effect */
+.aurora-rim {
+  position: relative;
+}
+
+.aurora-rim::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--aurora-cyan), var(--nebula-violet));
+  border-radius: inherit;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  opacity: 0;
+  transition: opacity 200ms var(--micro-ease);
+}
+
+.aurora-rim:focus-within::before,
+.aurora-rim:hover::before {
+  opacity: 0.6;
+}
+
+/* Typography styles */
+.memo-title {
+  font-family: 'Orbitron', 'Exo 2', monospace;
+  font-size: var(--title-size);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-variant: small-caps;
+  color: var(--starlight);
+  margin: 0;
+}
+
+.memo-body {
+  font-family: 'Inter', 'Satoshi', sans-serif;
+  font-size: var(--copy-size);
+  line-height: 1.47;
+  color: rgba(230, 238, 252, 0.9);
+}
+
+.memo-numeric {
+  font-family: 'Space Grotesk', 'Roboto Mono', monospace;
+  font-size: var(--numeric-size);
+  font-weight: 500;
+  color: var(--starlight);
+}
+
+/* Reduced motion overrides */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --memo-ease: ease;
+    --micro-ease: ease;
+  }
+  
+  .memo-glass,
+  .claim-card,
+  .confidence-gauge {
+    transform: none !important;
+    animation: none !important;
+  }
+}
+
+/* Animations */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 240, 255, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(0, 240, 255, 0.5); }
+}

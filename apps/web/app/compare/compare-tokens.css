@@ -1,0 +1,19 @@
+:root{
+  --bg-00:#05070A;
+  --bg-01:linear-gradient(180deg,#05070A 0%, #0B1220 100%);
+  --aurora-cyan:#00F0FF;
+  --nebula-violet:#B266FF;
+  --solar-amber:#FFB86B;
+  --starlight:#E6EEFC;
+  --glass-blur:12px;
+  --comp-ease:cubic-bezier(.16,.84,.24,1);
+  --micro-ease:cubic-bezier(.2,.9,.3,1);
+  --tile-radius:12px;
+  --card-depth:8px;
+}
+
+.compare-bg{ background:var(--bg-01); color:var(--starlight); min-height:100vh; }
+.glass{ backdrop-filter: blur(var(--glass-blur)); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--tile-radius); }
+.title-orbitron{ font-family: Orbitron, system-ui, sans-serif; letter-spacing: 0.6px; }
+.numeric-sg{ font-family: "Space Grotesk", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+.trend-label{ font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; font-size: 12px; opacity: 0.9; }

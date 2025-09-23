@@ -14,6 +14,10 @@ This document summarizes the current state of the project, recent deliverables, 
   - `/kg/node`, batch `/kg/nodes`, `/kg/find` (filters), `/kg/edges`, `/kg/stats` with pagination.
   - Cursor-based keyset pagination added to `/kg/find` and `/kg/edges` (descending by id), alongside legacy offset/limit for back-compat.
   - OpenAPI spec updated; smoke scripts and unit tests added.
+- Snapshot subsystem extensions:
+  - Deterministic snapshot hashing now augmented with optional `merkle_root` (in-memory Merkle tree) for future inclusion proofs (field added to create, sign, list responses; spec & docs updated).
+  - Prometheus metrics endpoint `/metrics` exposes counters for hash/sign operations and verification including duration sums (`kg_snapshot_hash_total`, `kg_snapshot_sign_total`, etc.).
+  - Tests updated to assert Merkle root stability and metrics presence.
 
 ## Stability and DX
 - Import stability: `apps/api/aurora/main.py` reinforced (imports + lightweight stubs) to avoid import-time errors during tests.

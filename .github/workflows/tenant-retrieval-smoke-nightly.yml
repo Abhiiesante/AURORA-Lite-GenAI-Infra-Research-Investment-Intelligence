@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Tenant Retrieval Smoke (nightly)
 
 on:
@@ -7,7 +8,6 @@ on:
 
 jobs:
   smoke:
-    if: ${{ vars.AURORA_RUN_TENANT_SMOKE_NIGHTLY == '1' || vars.AURORA_RUN_TENANT_SMOKE_NIGHTLY == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -35,7 +35,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -77,4 +76,4 @@ jobs:
           AURORA_RUN_TENANT_SMOKE: '1'
         run: |
           source .venv/bin/activate
-          pytest -q apps/api/tests/test_api_tenant_retrieval.py -q
+          pytest -q apps/api/tests/test_api_tenant_retrieval.py

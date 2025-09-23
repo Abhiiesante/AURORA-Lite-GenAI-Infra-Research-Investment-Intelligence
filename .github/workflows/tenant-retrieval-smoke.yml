@@ -1,7 +1,13 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Tenant Retrieval Smoke (optional)
 
 on:
   workflow_dispatch:
+    inputs:
+      run:
+        description: 'Run heavy tenant smoke (1 to enable)'
+        required: false
+        default: '0'
   push:
     branches: [ main ]
     paths:
@@ -11,9 +17,10 @@ on:
 
 jobs:
   smoke:
-    if: ${{ vars.AURORA_RUN_TENANT_SMOKE == '1' || vars.AURORA_RUN_TENANT_SMOKE == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      RUN_TENANT_SMOKE: '0'
 
     services:
       meilisearch:
@@ -40,6 +47,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Enable run gate on dispatch
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run != '' }}
+        run: echo "RUN_TENANT_SMOKE=${{ github.event.inputs.run }}" >> $GITHUB_ENV
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -47,6 +58,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          if [ "${RUN_TENANT_SMOKE}" != "1" ] && [ "${RUN_TENANT_SMOKE}" != "true" ]; then echo "Skipping install (gate off)"; exit 0; fi
           python -m venv .venv
           source .venv/bin/activate
           python -m pip install --upgrade pip
@@ -59,6 +71,7 @@ jobs:
           MEILI_URL: http://localhost:7700
           QDRANT_URL: http://localhost:6333
         run: |
+          if [ "${RUN_TENANT_SMOKE}" != "1" ] && [ "${RUN_TENANT_SMOKE}" != "true" ]; then echo "Skipping seed (gate off)"; exit 0; fi
           source .venv/bin/activate
           RESET_MEILI=1 RESET_QDRANT_ALL=1 AURORA_DEFAULT_TENANT_ID=1 python scripts/index_documents.py
           AURORA_DEFAULT_TENANT_ID=1 python scripts/index_documents.py
@@ -70,6 +83,7 @@ jobs:
           MEILI_URL: http://localhost:7700
           QDRANT_URL: http://localhost:6333
         run: |
+          if [ "${RUN_TENANT_SMOKE}" != "1" ] && [ "${RUN_TENANT_SMOKE}" != "true" ]; then echo "Skipping script (gate off)"; exit 0; fi
           source .venv/bin/activate
           python scripts/smoke_retrieval_tenants.py
 
@@ -80,5 +94,6 @@ jobs:
           QDRANT_URL: http://localhost:6333
           AURORA_RUN_TENANT_SMOKE: '1'
         run: |
+          if [ "${RUN_TENANT_SMOKE}" != "1" ] && [ "${RUN_TENANT_SMOKE}" != "true" ]; then echo "Skipping pytest (gate off)"; exit 0; fi
           source .venv/bin/activate
-          pytest -q apps/api/tests/test_api_tenant_retrieval.py -q
+          pytest -q apps/api/tests/test_api_tenant_retrieval.py
