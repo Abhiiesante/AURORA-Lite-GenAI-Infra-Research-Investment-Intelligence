@@ -15,7 +15,8 @@ export async function GET(req: NextRequest) {
       const u = new URL("/search", upstream);
       u.searchParams.set("q", q);
       u.searchParams.set("limit", String(limit));
-      const r = await fetch(u, { next: { revalidate: 0 } });
+  // Disable caching for dev proxy; use standard RequestInit to satisfy TS
+  const r = await fetch(u, { cache: "no-store" });
       if (r.ok) {
         const data = await r.json();
         const mapped = {

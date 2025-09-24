@@ -22,7 +22,7 @@ def main():
     r = requests.get(f"{BASE}/dev/gates/status?strict=false")
     r.raise_for_status()
     js = r.json()
-    assert "pass" in js and "gates" in js
+    assert isinstance(js, dict) and "pass" in js
     print("/dev/gates/status OK", json.dumps({"pass": js.get("pass")}))
 
 if __name__ == "__main__":

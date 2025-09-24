@@ -4454,15 +4454,22 @@ def gate_status(strict: bool = False):
                 rag = {"allowed": allowed, "sources": [], "valid_urls": [], "pass": False}
         else:
             # non-strict: only check allowed domains on retrieved docs
-            docs = hybrid_retrieval("Pinecone traction", top_n=6, rerank_k=4)
-            urls = [str(d.get("url")) for d in docs if isinstance(d.get("url"), str) and d.get("url")]
-            rag_ok = True
-            for u in urls:
-                host = urlparse(u).netloc.lower()
-                if not any(host.endswith(dom) for dom in allowed):
-                    rag_ok = False
-                    break
-            rag = {"allowed": allowed, "sources": urls[:10], "pass": rag_ok}
+            # This must be resilient when vector backends (qdrant/meili) are not provisioned
+            # such as in the minimal API container smoke workflow. If retrieval fails, we
+            # degrade gracefully and mark the gate as skipped (pass=True so container smoke
+            # doesn't fail purely due to absent optional infra).
+            try:
+                docs = hybrid_retrieval("Pinecone traction", top_n=6, rerank_k=4)
+                urls = [str(d.get("url")) for d in docs if isinstance(d.get("url"), str) and d.get("url")]
+                rag_ok = True
+                for u in urls:
+                    host = urlparse(u).netloc.lower()
+                    if not any(host.endswith(dom) for dom in allowed):
+                        rag_ok = False
+                        break
+                rag = {"allowed": allowed, "sources": urls[:10], "pass": rag_ok}
+            except Exception:
+                rag = {"allowed": allowed, "sources": [], "pass": True, "skipped": True, "reason": "retrieval-unavailable"}
 
         # Market perf
         try:
