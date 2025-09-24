@@ -35,10 +35,10 @@ jobs:
 
       - name: Wait for API to be ready
         run: |
-          for i in {1..30}; do
+          for i in {1..60}; do
             if curl -sf http://127.0.0.1:8000/healthz > /dev/null; then
-              echo "API is ready"; break; fi; sleep 2; done
-          curl -sf http://127.0.0.1:8000/healthz
+              echo "API is ready in iteration $i"; break; fi; sleep 2; done
+          curl -v http://127.0.0.1:8000/healthz || (echo 'Health check failed' && docker logs ytd-api && exit 1)
 
       - name: Run observability smoke
         run: |
