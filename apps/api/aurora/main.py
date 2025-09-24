@@ -1143,6 +1143,36 @@ def kg_get_node_diff(node_id: str, request: Request, from_ts: str, to_ts: str):
                             diff["edges"]["added"].append({"dst": dst, "type": et, "props_hash": phash, "props": pobj})
             except Exception:
                 pass
+            # Final reconciliation fallback: ensure any current outbound edges not present in baseline are included.
+            try:
+                current_edges_rows = list(
+                    s.execute(
+                        _text(
+                            "SELECT dst_uid, type, properties_json FROM kg_edges WHERE src_uid = :u "
+                            + (" AND tenant_id = :tid" if tfilter else "")
+                            + " AND (valid_to IS NULL OR valid_to > :to_at)"
+                        ),
+                        ({"u": node_id, "to_at": at_to} | ({"tid": tfilter} if tfilter else {})),
+                    )
+                )  # type: ignore[attr-defined]
+                baseline_dsts_final = {k[0] for k in map_from.keys()}
+                already_added_keys = {(e["dst"], e["type"], e["props_hash"]) for e in diff["edges"]["added"] if e.get("dst") and e.get("type") and e.get("props_hash")}
+                for r in current_edges_rows:
+                    dst = r[0] if isinstance(r, (tuple, list)) else getattr(r, "dst_uid", None)
+                    et = r[1] if isinstance(r, (tuple, list)) else getattr(r, "type", None)
+                    pr = r[2] if isinstance(r, (tuple, list)) else getattr(r, "properties_json", None)
+                    if not dst or dst in baseline_dsts_final:
+                        continue
+                    try:
+                        pobj = _json_local.loads(pr or "{}")
+                    except Exception:
+                        pobj = {}
+                    phash = _hl.sha256(_json_local.dumps(pobj, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+                    key = (dst, et, phash)
+                    if key not in already_added_keys:
+                        diff["edges"]["added"].append({"dst": dst, "type": et, "props_hash": phash, "props": pobj})
+            except Exception:
+                pass
     except HTTPException:
         raise
     except Exception as e:
@@ -4454,22 +4484,15 @@ def gate_status(strict: bool = False):
                 rag = {"allowed": allowed, "sources": [], "valid_urls": [], "pass": False}
         else:
             # non-strict: only check allowed domains on retrieved docs
-            # This must be resilient when vector backends (qdrant/meili) are not provisioned
-            # such as in the minimal API container smoke workflow. If retrieval fails, we
-            # degrade gracefully and mark the gate as skipped (pass=True so container smoke
-            # doesn't fail purely due to absent optional infra).
-            try:
-                docs = hybrid_retrieval("Pinecone traction", top_n=6, rerank_k=4)
-                urls = [str(d.get("url")) for d in docs if isinstance(d.get("url"), str) and d.get("url")]
-                rag_ok = True
-                for u in urls:
-                    host = urlparse(u).netloc.lower()
-                    if not any(host.endswith(dom) for dom in allowed):
-                        rag_ok = False
-                        break
-                rag = {"allowed": allowed, "sources": urls[:10], "pass": rag_ok}
-            except Exception:
-                rag = {"allowed": allowed, "sources": [], "pass": True, "skipped": True, "reason": "retrieval-unavailable"}
+            docs = hybrid_retrieval("Pinecone traction", top_n=6, rerank_k=4)
+            urls = [str(d.get("url")) for d in docs if isinstance(d.get("url"), str) and d.get("url")]
+            rag_ok = True
+            for u in urls:
+                host = urlparse(u).netloc.lower()
+                if not any(host.endswith(dom) for dom in allowed):
+                    rag_ok = False
+                    break
+            rag = {"allowed": allowed, "sources": urls[:10], "pass": rag_ok}
 
         # Market perf
         try:
