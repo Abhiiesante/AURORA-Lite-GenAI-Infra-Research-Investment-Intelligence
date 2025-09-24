@@ -68,6 +68,9 @@ importers:
       react:
         specifier: 18.2.0
         version: 18.2.0
+      react-cytoscapejs:
+        specifier: 2.0.0
+        version: 2.0.0(cytoscape@3.30.3)(react@18.2.0)
       react-dom:
         specifier: 18.2.0
         version: 18.2.0(react@18.2.0)
@@ -3012,6 +3015,12 @@ packages:
     resolution: {integrity: sha512-1uWd07EME6XZvMfapwZmc7NgCZqDemcvicRi3wMJzXsQLvZ3L7fTHVyPy1bZdnWXM4iPjYuNE+uJ41MLKeTtnA==}
     peerDependencies:
       react: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0
+
+  react-cytoscapejs@2.0.0:
+    resolution: {integrity: sha512-t3SSl1DQy7+JQjN+8QHi1anEJlM3i3aAeydHTsJwmjo/isyKK7Rs7oCvU6kZsB9NwZidzZQR21Vm2PcBLG/Tjg==}
+    peerDependencies:
+      cytoscape: ^3.2.19
+      react: '>=15.0.0'
 
   react-dom@18.2.0:
     resolution: {integrity: sha512-6IMTriUmvsjHUjNtEDudZfuDQUoWXVxKHhlEGSk81n4YFS+r/Kl99wXiwlVXtPBtJenozv2P+hxDsw9eA7Xo6g==}
@@ -7319,6 +7328,12 @@ snapshots:
 
   react-composer@5.0.3(react@18.2.0):
     dependencies:
+      prop-types: 15.8.1
+      react: 18.2.0
+
+  react-cytoscapejs@2.0.0(cytoscape@3.30.3)(react@18.2.0):
+    dependencies:
+      cytoscape: 3.30.3
       prop-types: 15.8.1
       react: 18.2.0
 
