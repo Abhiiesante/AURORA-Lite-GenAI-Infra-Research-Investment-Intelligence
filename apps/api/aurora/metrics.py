@@ -132,7 +132,9 @@ def _compute_metrics_duckdb(company_id: int, window: str) -> Dict[str, float]:
         import importlib as _importlib
         duck = _importlib.import_module("duckdb")
         con = duck.connect()
-        tbl = f"read_parquet('{str(metrics_glob).replace('\\', '/')}')"
+    # Precompute posix path to avoid backslash in f-string expression (Py 3.11 restriction)
+    _parquet_path = metrics_glob.as_posix()
+    tbl = f"read_parquet('{_parquet_path}')"
         # Get latest snapshot for this company
         q = f"""
         SELECT * FROM {tbl}
@@ -172,7 +174,8 @@ def _load_mentions_series_duckdb(company_id: int, take: int = 7) -> List[Dict[st
         import importlib as _importlib
         duck = _importlib.import_module("duckdb")
         con = duck.connect()
-        tbl = f"read_parquet('{str(metrics_glob).replace('\\', '/')}')"
+    _parquet_path = metrics_glob.as_posix()
+    tbl = f"read_parquet('{_parquet_path}')"
         q = f"""
         SELECT week_start, mentions
         FROM {tbl}
@@ -213,7 +216,8 @@ def _compute_dashboard_duckdb(company_id: int, window: str) -> Tuple[Dict[str, f
         import importlib as _importlib
         duck = _importlib.import_module("duckdb")
         con = duck.connect()
-        tbl = f"read_parquet('{str(metrics_glob).replace('\\', '/')}')"
+    _parquet_path = metrics_glob.as_posix()
+    tbl = f"read_parquet('{_parquet_path}')"
         # Filter by company and order ascending by week_start
         q = f"""
         SELECT week_start, mentions, filings, stars, commits, sentiment, signal_score
