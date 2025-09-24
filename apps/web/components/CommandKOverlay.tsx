@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useCmdKStore } from "@/app/cmdkStore";
 import { sfx } from "@/app/sfx";
 import dynamic from "next/dynamic";
@@ -14,13 +14,16 @@ export default function CommandKOverlay() {
   const { isOpen, close, query, setQuery } = useCmdKStore();
   const { suggest, execute, getThumbnail } = useCommandK();
   const inputRef = useRef(null as HTMLInputElement | null);
+  const previewRef = useRef(null as HTMLDivElement | null);
   const [active, setActive] = useState(0);
   const [results, setResults] = useState([] as CmdKResult[]);
   const [thumbUrl, setThumbUrl] = useState(null as string | null);
   const [executing, setExecuting] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  useEffect(() => { if (isOpen) { inputRef.current?.focus(); sfx.open(); } else { sfx.close(); } }, [isOpen]);
+  useEffect(() => {
+    if (isOpen) { inputRef.current?.focus(); sfx.open(); } else { sfx.close(); }
+  }, [isOpen]);
 
   // Debounced search
   useEffect(() => {
@@ -46,15 +49,13 @@ export default function CommandKOverlay() {
     }
   }, [active, results, getThumbnail]);
 
-  if (!isOpen) return null;
-
-  const activeItem = results[active];
   const prefersReduced = typeof window !== 'undefined' && (
     (document?.documentElement?.classList?.contains('reduce-motion')) ||
     (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   );
-  const previewRef = useRef(null as HTMLDivElement | null);
+
   useEffect(() => {
+    if (!isOpen) return; // only attach when open
     if (prefersReduced) return;
     const el = previewRef.current; if (!el) return;
     const onMove = (e: MouseEvent) => {
@@ -66,8 +67,12 @@ export default function CommandKOverlay() {
     const onLeave = () => { el.style.transform = 'none'; };
     window.addEventListener('mousemove', onMove);
     el.addEventListener('mouseleave', onLeave);
-    return () => { window.removeEventListener('mousemove', onMove); el.removeEventListener('mouseleave', onLeave); };
-  }, [prefersReduced]);
+    return () => { window.removeEventListener('mousemove', onMove); el?.removeEventListener('mouseleave', onLeave); };
+  }, [prefersReduced, isOpen]);
+
+  if (!isOpen) return null;
+
+  const activeItem = results[active];
 
   const handleEnter = async (e: any) => {
     const pick = results[active]; if (!pick) return;
