@@ -60,9 +60,9 @@ export default function CommandKOverlay() {
     const el = previewRef.current; if (!el) return;
     const onMove = (e: MouseEvent) => {
       const rect = el.getBoundingClientRect();
-      const cx = rect.left + rect.width/2; const cy = rect.top + rect.height/2;
+      const cx = rect.left + rect.width / 2; const cy = rect.top + rect.height / 2;
       const dx = (e.clientX - cx) / rect.width; const dy = (e.clientY - cy) / rect.height;
-      el.style.transform = `perspective(800px) rotateX(${(-dy*4).toFixed(2)}deg) rotateY(${(dx*4).toFixed(2)}deg)`;
+      el.style.transform = `perspective(800px) rotateX(${(-dy * 4).toFixed(2)}deg) rotateY(${(dx * 4).toFixed(2)}deg)`;
     };
     const onLeave = () => { el.style.transform = 'none'; };
     window.addEventListener('mousemove', onMove);
@@ -115,15 +115,15 @@ export default function CommandKOverlay() {
 
   const overlayVariants = {
     hidden: { opacity: 0, y: -18, scale: 0.996 },
-    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.30, ease: [0.16,0.84,0.24,1] as any } },
+    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.30, ease: [0.16, 0.84, 0.24, 1] as any } },
     exit: { opacity: 0, y: -12, transition: { duration: 0.18 } },
   };
 
   return (
     <div className="cmdk-overlay" onClick={close} role="dialog" aria-modal="true" aria-label="Command palette">
-  <motion.div initial="hidden" animate="visible" exit="exit" variants={overlayVariants} className="cmdk-panel glass" onClick={(e: any) => e.stopPropagation()} style={{ position:'relative', overflow:'hidden' }}>
+      <motion.div initial="hidden" animate="visible" exit="exit" variants={overlayVariants} className="cmdk-panel glass" onClick={(e: any) => e.stopPropagation()} style={{ position: 'relative', overflow: 'hidden' }}>
         <ParticleRibbon opacity={0.16} />
-        <div style={{ gridColumn: '1 / -1', display:'flex', alignItems:'center', gap:8 }}>
+        <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 8 }}>
           <input
             ref={inputRef}
             value={query}
@@ -140,20 +140,20 @@ export default function CommandKOverlay() {
             }}
           />
           {executing && (
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div className="spinner" aria-label="Executing" />
-              <div aria-label="Progress" style={{ width:96, height:6, borderRadius:999, background:'rgba(255,255,255,0.12)', overflow:'hidden' }}>
-                <div style={{ width: `${progress}%`, height:'100%', background:'linear-gradient(90deg, var(--cyan), var(--violet))' }} />
+              <div aria-label="Progress" style={{ width: 96, height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}>
+                <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--cyan), var(--violet))' }} />
               </div>
             </div>
           )}
         </div>
         {/* Help/Shortcuts panel if query starts with 'help' */}
         {String(query).trim().toLowerCase().startsWith('help') ? (
-          <div className="cmdk-list" role="region" aria-label="Shortcuts help" style={{ lineHeight:1.6 }}>
-            <div className="glass" style={{ padding:12, borderRadius:12 }}>
-              <strong style={{ display:'block', marginBottom:6 }}>Shortcuts</strong>
-              <ul style={{ margin:0, paddingLeft:18 }}>
+          <div className="cmdk-list" role="region" aria-label="Shortcuts help" style={{ lineHeight: 1.6 }}>
+            <div className="glass" style={{ padding: 12, borderRadius: 12 }}>
+              <strong style={{ display: 'block', marginBottom: 6 }}>Shortcuts</strong>
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
                 <li><kbd>⌘K</kbd>/<kbd>Ctrl</kbd>+<kbd>K</kbd>: Toggle command palette</li>
                 <li><kbd>/</kbd>: Open command palette and focus search</li>
                 <li><kbd>↑</kbd>/<kbd>↓</kbd>: Navigate results</li>
@@ -162,54 +162,54 @@ export default function CommandKOverlay() {
                 <li><kbd>Alt</kbd>+<kbd>Enter</kbd>: Run secondary action (e.g., Generate Memo)</li>
                 <li><kbd>Esc</kbd>: Close palette</li>
               </ul>
-              <button onClick={() => setQuery("")} className="cmdk-item" style={{ marginTop:10 }}>Back to search</button>
+              <button onClick={() => setQuery("")} className="cmdk-item" style={{ marginTop: 10 }}>Back to search</button>
             </div>
           </div>
         ) : (
           <div id="cmdk-listbox" role="listbox" className="cmdk-list">
-          {results.map((i: CmdKResult, idx: number) => (
-            <motion.button
-              key={i.id}
-              role="option"
-              aria-selected={idx === active}
-              className="cmdk-item"
-              style={{ outline: idx===active? '2px solid rgba(0,240,255,0.5)': undefined }}
-              onMouseEnter={()=> setActive(idx)}
-              onClick={()=> { sfx.confirm(); setActive(idx); void handleEnter({ key: 'Enter', altKey:false, shiftKey:false, preventDefault(){}, stopPropagation(){}} as any); }}
-              whileHover={{ scale: 1.02 }} transition={{ duration: 0.14, ease: [0.2,0.9,0.3,1] as any }}
-            >
-              <span className="cmdk-label">{i.title}</span>
-              <span className="cmdk-k">{i.type}</span>
-            </motion.button>
-          ))}
+            {results.map((i: CmdKResult, idx: number) => (
+              <motion.button
+                key={i.id}
+                role="option"
+                aria-selected={idx === active}
+                className="cmdk-item"
+                style={{ outline: idx === active ? '2px solid rgba(0,240,255,0.5)' : undefined }}
+                onMouseEnter={() => setActive(idx)}
+                onClick={() => { sfx.confirm(); setActive(idx); void handleEnter({ key: 'Enter', altKey: false, shiftKey: false, preventDefault() { }, stopPropagation() { } } as any); }}
+                whileHover={{ scale: 1.02 }} transition={{ duration: 0.14, ease: [0.2, 0.9, 0.3, 1] as any }}
+              >
+                <span className="cmdk-label">{i.title}</span>
+                <span className="cmdk-k">{i.type}</span>
+              </motion.button>
+            ))}
           </div>
         )}
-  <aside className="cmdk-preview" aria-label="Preview" ref={previewRef}>
+        <aside className="cmdk-preview" aria-label="Preview" ref={previewRef}>
           {prefersReduced ? (
             <div className="preview-box">{activeItem ? activeItem.title : '—'}</div>
           ) : thumbUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumbUrl} alt="Preview thumbnail" style={{ width:'100%', height:220, objectFit:'cover', borderRadius:10 }} />
+            <img src={thumbUrl} alt="Preview thumbnail" style={{ width: '100%', height: 220, objectFit: 'cover', borderRadius: 10 }} />
           ) : (
             <div style={{ width: '100%', height: 220 }}>
               <MiniConstellation />
             </div>
           )}
         </aside>
-        <div className="cmdk-hint" style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div className="cmdk-hint" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>⌘K / Ctrl+K • / search • Enter = open • Shift+Enter = splitview • Esc = close</span>
-          <label style={{ display:'inline-flex', gap:6, alignItems:'center', fontSize:12 }}>
-            <input type="checkbox" onChange={(e:any)=>{
-              const on = e.target.checked; try { localStorage.setItem('aurora_reduce_motion', on? '1':'0'); } catch {}
+          <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 12 }}>
+            <input type="checkbox" onChange={(e: any) => {
+              const on = e.target.checked; try { localStorage.setItem('aurora_reduce_motion', on ? '1' : '0'); } catch { }
               document.documentElement.classList.toggle('reduce-motion', on);
-            }} defaultChecked={typeof window!=='undefined' && localStorage.getItem('aurora_reduce_motion')==='1'} />
+            }} defaultChecked={typeof window !== 'undefined' && localStorage.getItem('aurora_reduce_motion') === '1'} />
             Prefers reduced motion
           </label>
         </div>
         <div className="sr-only" aria-live="polite" aria-atomic="true">{activeItem ? `Selected ${activeItem.title}` : ''}</div>
         <div style={{ gridColumn: '1 / -1' }}>
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-            <button onClick={() => setQuery('help: shortcuts')} style={{ fontSize:12, opacity:0.8, textDecoration:'underline' }}>Shortcuts</button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <button onClick={() => setQuery('help: shortcuts')} style={{ fontSize: 12, opacity: 0.8, textDecoration: 'underline' }}>Shortcuts</button>
           </div>
           <ThumbnailCarousel items={(results || []).slice(0, 10).map((r: CmdKResult) => ({ id: r.id, label: r.title }))} />
         </div>

@@ -48,7 +48,7 @@ interface MemoData {
 export default function MemoPage() {
   const params = useParams();
   const companyId = params.id as string;
-  
+
   const [memo, setMemo] = useState<MemoData | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -65,7 +65,7 @@ export default function MemoPage() {
   const loadMemo = async () => {
     try {
       setLoading(true);
-      
+
       // Try to load existing memo first
       const memoRes = await fetch(`/api/memo/${companyId}`);
       if (memoRes.ok) {
@@ -105,7 +105,7 @@ export default function MemoPage() {
       }
 
       const newMemo = await response.json();
-      
+
       // Transform to match MemoData interface
       const transformedMemo: MemoData = {
         memo_id: `memo:${companyId}-${Date.now()}`,
@@ -129,7 +129,7 @@ export default function MemoPage() {
       setMemo(transformedMemo);
     } catch (error) {
       console.error('Memo generation error:', error);
-      
+
       // Fallback memo
       setMemo({
         memo_id: `memo:${companyId}-fallback`,
@@ -159,16 +159,16 @@ export default function MemoPage() {
 
   const handleClaimEdit = (claimId: string, newText: string) => {
     if (!memo) return;
-    
+
     const updatedMemo = {
       ...memo,
-      claims: memo.claims.map(claim => 
-        claim.claim_id === claimId 
+      claims: memo.claims.map(claim =>
+        claim.claim_id === claimId
           ? { ...claim, text: newText }
           : claim
       )
     };
-    
+
     setMemo(updatedMemo);
   };
 
@@ -182,7 +182,7 @@ export default function MemoPage() {
 
   if (loading && !memo) {
     return (
-      <motion.div 
+      <motion.div
         className="memo-page-container"
         variants={pageVariants}
         initial="initial"
@@ -195,8 +195,8 @@ export default function MemoPage() {
         }}
       >
         <div className="memo-skeleton">
-          <div className="memo-glass memo-page" style={{ 
-            maxWidth: '1400px', 
+          <div className="memo-glass memo-page" style={{
+            maxWidth: '1400px',
             margin: '0 auto',
             padding: 'var(--memo-padding)',
             minHeight: '80vh'
@@ -212,7 +212,7 @@ export default function MemoPage() {
   }
 
   return (
-    <motion.div 
+    <motion.div
       className="memo-page-container"
       variants={pageVariants}
       initial="initial"
@@ -226,7 +226,7 @@ export default function MemoPage() {
     >
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
         {/* Hero Section */}
-        <motion.div 
+        <motion.div
           className="memo-hero"
           style={{
             display: 'flex',
@@ -237,7 +237,7 @@ export default function MemoPage() {
         >
           {/* Left: Thesis + Actions */}
           <div style={{ flex: 1 }}>
-            <motion.h1 
+            <motion.h1
               className="memo-title aurora-rim"
               variants={memoVariants}
               animate={memo ? "complete" : "skeleton"}
@@ -245,13 +245,13 @@ export default function MemoPage() {
             >
               {memo?.title || 'Loading...'}
             </motion.h1>
-            
-            <motion.p 
+
+            <motion.p
               className="memo-body"
-              style={{ 
-                fontSize: '18px', 
+              style={{
+                fontSize: '18px',
                 marginBottom: '24px',
-                opacity: 0.9 
+                opacity: 0.9
               }}
               variants={memoVariants}
               animate={memo ? "complete" : "skeleton"}
@@ -261,7 +261,7 @@ export default function MemoPage() {
 
             {/* Quick Actions */}
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <button 
+              <button
                 className="memo-glass aurora-rim"
                 onClick={() => setExportOpen(true)}
                 style={{
@@ -277,8 +277,8 @@ export default function MemoPage() {
               >
                 Export PDF
               </button>
-              
-              <button 
+
+              <button
                 className="memo-glass"
                 onClick={() => setProvenanceOpen(true)}
                 style={{
@@ -295,7 +295,7 @@ export default function MemoPage() {
               </button>
 
               {!memo && (
-                <button 
+                <button
                   className="memo-glass"
                   onClick={generateMemo}
                   disabled={generating}
@@ -319,14 +319,14 @@ export default function MemoPage() {
           {/* Right: Confidence Gauge + Provenance Summary */}
           <div style={{ flex: '0 0 280px' }}>
             <Suspense fallback={<div>Loading gauge...</div>}>
-              <ConfidenceGauge 
+              <ConfidenceGauge
                 confidence={memo?.confidence || 0}
                 size={120}
               />
             </Suspense>
-            
+
             {memo?.provenance_bundle && (
-              <div 
+              <div
                 className="memo-glass"
                 style={{
                   padding: '16px',
@@ -346,7 +346,7 @@ export default function MemoPage() {
         {/* Main Content Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
           {/* Left Column: Claims & Analysis */}
-          <motion.div 
+          <motion.div
             className="memo-content"
             variants={memoVariants}
             animate={memo ? "complete" : "skeleton"}
@@ -355,8 +355,8 @@ export default function MemoPage() {
               padding: 'var(--memo-padding)',
               minHeight: '60vh'
             }}>
-              <h2 style={{ 
-                fontSize: '24px', 
+              <h2 style={{
+                fontSize: '24px',
                 marginBottom: '20px',
                 color: 'var(--starlight)',
                 fontWeight: '600'
@@ -379,7 +379,7 @@ export default function MemoPage() {
           </motion.div>
 
           {/* Right Column: Context Sidebar */}
-          <motion.div 
+          <motion.div
             className="memo-sidebar"
             variants={memoVariants}
             animate={memo ? "complete" : "skeleton"}
@@ -391,7 +391,7 @@ export default function MemoPage() {
               <h3 style={{ fontSize: '18px', marginBottom: '16px', color: 'var(--starlight)' }}>
                 Evidence Bundle
               </h3>
-              
+
               {memo?.provenance_bundle?.retrieval_trace?.slice(0, 5).map((trace: any, index: number) => (
                 <div key={index} style={{
                   padding: '8px 0',
@@ -403,9 +403,9 @@ export default function MemoPage() {
                   </div>
                   <div style={{ marginTop: '4px' }}>
                     {trace.url ? (
-                      <a 
-                        href={trace.url} 
-                        target="_blank" 
+                      <a
+                        href={trace.url}
+                        target="_blank"
                         rel="noopener noreferrer"
                         style={{ color: 'var(--aurora-cyan)', textDecoration: 'none' }}
                       >
@@ -432,7 +432,7 @@ export default function MemoPage() {
             />
           </Suspense>
         )}
-        
+
         {exportOpen && memo && (
           <Suspense fallback={<div>Loading export...</div>}>
             <ExportFlow
