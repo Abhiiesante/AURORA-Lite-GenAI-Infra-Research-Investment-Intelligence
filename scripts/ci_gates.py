@@ -4,6 +4,17 @@ from typing import List, Dict, Any
 
 from fastapi.testclient import TestClient
 
+# Ensure project root is on sys.path when invoked in minimal CI environments
+# (some workflows may omit PYTHONPATH=. env export leading to 'No module named apps').
+try:
+    _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+    _PROJECT_ROOT = os.path.abspath(os.path.join(_THIS_DIR, ".."))
+    if _PROJECT_ROOT not in sys.path:
+        sys.path.insert(0, _PROJECT_ROOT)
+except Exception:
+    # Non-fatal; import below will surface any real issue
+    pass
+
 try:
     from apps.api.aurora.main import app
 except Exception as e:

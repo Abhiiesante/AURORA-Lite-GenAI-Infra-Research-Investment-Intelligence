@@ -35,7 +35,7 @@ jobs:
           --health-timeout 5s
           --health-retries 30
       qdrant:
-        image: qdrant/qdrant:latest
+        image: qdrant/qdrant:v1.8.2
         ports:
           - 6333:6333
         options: >-
@@ -57,6 +57,8 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
+        env:
+          PYTHONPATH: .
         run: |
           if [ "${RUN_TENANT_SMOKE}" != "1" ] && [ "${RUN_TENANT_SMOKE}" != "true" ]; then echo "Skipping install (gate off)"; exit 0; fi
           python -m venv .venv
@@ -69,6 +71,7 @@ jobs:
           PYTHONPATH: .
           MEILI_URL: http://localhost:7700
           QDRANT_URL: http://localhost:6333
+          AURORA_DEFAULT_TENANT_ID: 1
         run: |
           if [ "${RUN_TENANT_SMOKE}" != "1" ] && [ "${RUN_TENANT_SMOKE}" != "true" ]; then echo "Skipping seed (gate off)"; exit 0; fi
           source .venv/bin/activate
@@ -81,6 +84,7 @@ jobs:
           PYTHONPATH: .
           MEILI_URL: http://localhost:7700
           QDRANT_URL: http://localhost:6333
+          AURORA_DEFAULT_TENANT_ID: 1
         run: |
           if [ "${RUN_TENANT_SMOKE}" != "1" ] && [ "${RUN_TENANT_SMOKE}" != "true" ]; then echo "Skipping script (gate off)"; exit 0; fi
           source .venv/bin/activate
@@ -92,6 +96,7 @@ jobs:
           MEILI_URL: http://localhost:7700
           QDRANT_URL: http://localhost:6333
           AURORA_RUN_TENANT_SMOKE: '1'
+          AURORA_DEFAULT_TENANT_ID: 1
         run: |
           if [ "${RUN_TENANT_SMOKE}" != "1" ] && [ "${RUN_TENANT_SMOKE}" != "true" ]; then echo "Skipping pytest (gate off)"; exit 0; fi
           source .venv/bin/activate

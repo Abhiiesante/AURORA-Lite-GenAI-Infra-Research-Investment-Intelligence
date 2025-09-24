@@ -16,5 +16,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Run RAG golden harness
+        env:
+          PYTHONPATH: .
         run: |
           python scripts/ci_rag_harness.py

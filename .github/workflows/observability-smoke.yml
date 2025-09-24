@@ -26,6 +26,8 @@ jobs:
           pip install requests
 
       - name: Start API
+        env:
+          PYTHONPATH: .
         run: |
           nohup python -m uvicorn apps.api.aurora.main:app --host 127.0.0.1 --port 8000 --log-level warning &
           for i in {1..60}; do
@@ -33,5 +35,7 @@ jobs:
           done
 
       - name: Smoke observability
+        env:
+          PYTHONPATH: .
         run: |
           python scripts/smoke_observability.py http://127.0.0.1:8000
