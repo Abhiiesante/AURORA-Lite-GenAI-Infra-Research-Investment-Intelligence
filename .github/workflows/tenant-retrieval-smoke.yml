@@ -29,23 +29,26 @@ jobs:
           - 7700:7700
         env:
           MEILI_NO_ANALYTICS: 'true'
-        options: >-
-          --health-cmd "curl -sS http://localhost:7700/health || exit 1"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 30
       qdrant:
         image: qdrant/qdrant:v1.8.2
         ports:
           - 6333:6333
-        options: >-
-          --health-cmd "curl -sS http://localhost:6333/collections || exit 1"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 30
 
     steps:
       - uses: actions/checkout@v4
+      - name: Wait for Meilisearch and Qdrant
+        run: |
+          echo "Waiting for Meilisearch (http://localhost:7700/health) and Qdrant (http://localhost:6333/collections)"
+          for i in {1..60}; do
+            MS=0; QD=0
+            curl -fsS http://localhost:7700/health >/dev/null && MS=1 || true
+            curl -fsS http://localhost:6333/collections >/dev/null && QD=1 || true
+            if [ "$MS" = "1" ] && [ "$QD" = "1" ]; then
+              echo "Services are up"; break; fi
+            echo "Wait $i..."; sleep 1;
+          done
+          curl -fsS http://localhost:7700/health >/dev/null
+          curl -fsS http://localhost:6333/collections >/dev/null
 
       - name: Enable run gate on dispatch
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run != '' }}
