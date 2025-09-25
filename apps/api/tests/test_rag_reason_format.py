@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
-from apps.api.aurora.main import app
+# conftest.py inserts apps/api on sys.path; import using the aurora alias
+from aurora.main import app  # type: ignore
 
 
 def test_rag_gate_reason_insufficient_sources():

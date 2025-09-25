@@ -1,8 +1,9 @@
 from fastapi.testclient import TestClient
 
-from apps.api.aurora import main as aurora_main
-from apps.api.aurora.main import app
-import apps.api.aurora.retrieval as retrieval
+# conftest.py inserts apps/api on sys.path; import using the aurora alias
+from aurora import main as aurora_main  # type: ignore
+from aurora.main import app  # type: ignore
+import aurora.retrieval as retrieval  # type: ignore
 
 
 def test_rag_strict_fallback_when_sources_empty(monkeypatch):
