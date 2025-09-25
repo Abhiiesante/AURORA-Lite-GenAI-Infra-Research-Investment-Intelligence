@@ -18,6 +18,20 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+      meilisearch:
+        image: getmeili/meilisearch:v1.7
+        ports:
+          - 7700:7700
+        env:
+          MEILI_NO_ANALYTICS: 'true'
+        options: >-
+          --health-cmd "curl -sS http://localhost:7700/health || exit 1" --health-interval 5s --health-timeout 5s --health-retries 30
+      qdrant:
+        image: qdrant/qdrant:v1.8.2
+        ports:
+          - 6333:6333
+        options: >-
+          --health-cmd "curl -sS http://localhost:6333/collections || exit 1" --health-interval 5s --health-timeout 5s --health-retries 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -62,9 +76,12 @@ jobs:
           pytest -q apps/api/tests
         env:
           DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/aurora
+          PYTHONPATH: .
       - name: Observability smoke (gating)
         run: |
           python - << 'PY'
+          import os
+          os.environ.setdefault('PYTHONPATH', '.')
           from fastapi.testclient import TestClient
           from apps.api.aurora.main import app
           c = TestClient(app)
@@ -76,6 +93,9 @@ jobs:
           PY
       - name: CI Gates
         run: |
+          export PYTHONPATH=.:$PYTHONPATH
+          # Light warm-up indexing for retrieval so RAG gates have at least one doc
+          python scripts/index_documents.py || true
           python scripts/ci_gates.py
         env:
           DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/aurora
@@ -83,17 +103,22 @@ jobs:
           SMAPE_MAX: 80
           ERROR_RATE_MAX: 0.02
           ALLOWED_RAG_DOMAINS: example.com
+          RAG_MIN_SOURCES: 1
+          MEILI_URL: http://localhost:7700
+          QDRANT_URL: http://localhost:6333
           # Optional: promote Market Map perf gate into main CI once stable.
           # Set to '1' to enforce /dev/gates/market-perf (defaults to non-gating here).
           CI_MARKET_GATE: '0'
       - name: Postgres smoke (seed and mirror)
         run: |
+          export PYTHONPATH=.:$PYTHONPATH
           python scripts/create_sample_data.py
           python flows/mirror_companies_to_postgres.py
         env:
           DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/aurora
       - name: Data contracts check (GE)
         run: |
+          export PYTHONPATH=.:$PYTHONPATH
           python scripts/create_sample_data.py
           python flows/data_contracts_check.py
       - name: Placeholder RAG eval (smoke)
