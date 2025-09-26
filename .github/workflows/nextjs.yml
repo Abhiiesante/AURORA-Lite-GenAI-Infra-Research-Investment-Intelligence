@@ -46,12 +46,8 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           static_site_generator: next
-      - name: Build (aurora-web)
-        run: pnpm --filter aurora-web build
-      - name: Export static site
-        run: |
-          cd apps/web
-          pnpm exec next export
+      - name: Build + Export (static)
+        run: pnpm build:static
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

@@ -1,0 +1,49 @@
+name: Deploy Next.js SSR (aurora-web)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/web/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+
+jobs:
+  build-ssr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.7.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+      - name: Build (SSR)
+        run: pnpm --filter aurora-web build
+      - name: Upload .next artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurora-web-next
+          path: apps/web/.next
+      - name: Upload package.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurora-web-package
+          path: |
+            apps/web/package.json
+            package.json
+            pnpm-lock.yaml
+
+  # Deployment staging placeholder (user can adapt to chosen platform)
+  # deploy:
+  #   needs: build-ssr
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: TODO deploy to chosen host
+  #       run: echo "Integrate with Render/Fly/Vercel/etc."
