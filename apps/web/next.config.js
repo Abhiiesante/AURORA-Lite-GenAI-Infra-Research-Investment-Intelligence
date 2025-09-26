@@ -5,6 +5,8 @@ const nextConfig = {
     // Let the separate lint step handle errors; don't fail the build
     ignoreDuringBuilds: true,
   },
+  output: 'export',
+  images: { unoptimized: true },
 };
 
 module.exports = nextConfig;
