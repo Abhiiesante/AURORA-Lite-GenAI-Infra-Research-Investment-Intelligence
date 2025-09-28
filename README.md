@@ -26,8 +26,7 @@ Ingest public signals (RSS, GitHub, SEC filings, etc.), normalize & enrich entit
 - Sovereign ecosystem extensions (agents, signing, multi‑tenant retrieval, snapshots)
 
 ## 🌐 Website / Demo
-If a public deployment exists, add it here (e.g. `https://aurora-lite.example.com`).
-> Placeholder: (no hosted demo URL committed in repo).
+> Placeholder: (no hosted demo URL committed in repo)](https://abhiiesante.github.io/AURORA-Lite-GenAI-Infra-Research-Investment-Intelligence/).
 
 ## 🏷 Topics
 `generative-ai` · `rag` · `retrieval-augmented-generation` · `knowledge-graph` · `vector-search` · `investment-intelligence` · `fastapi` · `nextjs` · `qdrant` · `meilisearch` · `pydantic` · `temporal` · `observability` · `prometheus` · `grafana`
