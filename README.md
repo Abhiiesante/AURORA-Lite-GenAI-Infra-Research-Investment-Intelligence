@@ -1,43 +1,120 @@
-# AURORA-Lite — GenAI Infra Research & Investment Intelligence (Student Zero-Cost Stack)
+# AURORA-Lite — GenAI Infra Research & Investment Intelligence
 
 [![Observability Smoke](https://github.com/Abhiiesante/YTD/actions/workflows/observability-smoke.yml/badge.svg)](https://github.com/Abhiiesante/YTD/actions/workflows/observability-smoke.yml)
 
-A zero-cost, local-first platform for real-time research on Generative AI infrastructure companies. Ingests open sources, builds a small knowledge graph and vector index, and serves investor-grade briefs with citations using local models.
-Next.js app in `apps/web`. Set `NEXT_PUBLIC_API_URL` to point to the API.
+> Local‑first, zero (or near‑zero) cost research & investment intelligence stack for Generative AI infrastructure companies — ingestion → enrichment → knowledge graph + vector index → retrieval + reasoning → investor‑grade outputs (with auditable provenance & metrics gates).
 
-New pages (Phase 3):
-- /market-map – interactive market map with segment filter and JSON export
-- /alerts – grouped alerts with evidence tooltips
-- /deals – deal candidates, generate auto-memo, export PDF
-- /forecast – time-series forecast + what-if shock
-- /people – people graph
-- /investors – investor profile + syndication graph
+---
 
-Demo walkthrough (≈8 minutes):
-1) Market overview: open /market-map, filter by segment and min signal; export the JSON.
-2) Alerts triage: open /alerts, hover tooltips, click evidence.
-3) Deal room: open /deals, select a candidate, Generate Memo, Export PDF.
+## 🔍 About
 
-Artifacts produced:
-- market_export.json (from /market-map)
-- memo.pdf (from /deals)
-- Optional: screenshot of /alerts filtered list
+Aurora‑Lite is a full vertical slice of a modern AI research / investment intelligence platform designed to be:
+
+- **Local‑first & low cost**: SQLite / Postgres optional, works with local models and commodity hardware.
+- **Evidence driven**: Every narrative / comparison / forecast ties back to cited source artifacts.
+- **Composable retrieval**: Hybrid lexical + vector + graph traversal + time‑travel KG queries.
+- **Operationally observable**: First‑class perf / error / forecast / retrieval gates with Prometheus + Grafana.
+- **Phase‑oriented**: Each milestone (Phases 2–6) layers new capabilities without breaking prior guarantees.
+
+## 📝 Project Description (Concise)
+Ingest public signals (RSS, GitHub, SEC filings, etc.), normalize & enrich entities, compute signals, build a knowledge graph & vector index, then expose:
+
+- Research copilot (strict JSON + citations)
+- Market map & KG explorer
+- Trend & time‑series forecasting with simulation
+- Deal & memo generation workflows
+- Sovereign ecosystem extensions (agents, signing, multi‑tenant retrieval, snapshots)
+
+## 🌐 Website / Demo
+If a public deployment exists, add it here (e.g. `https://aurora-lite.example.com`).
+> Placeholder: (no hosted demo URL committed in repo).
+
+## 🏷 Topics
+`generative-ai` · `rag` · `retrieval-augmented-generation` · `knowledge-graph` · `vector-search` · `investment-intelligence` · `fastapi` · `nextjs` · `qdrant` · `meilisearch` · `pydantic` · `temporal` · `observability` · `prometheus` · `grafana`
+
+Add these as repository topics for better GitHub discovery.
+
+## 📦 Monorepo Overview
+
+| Area | Path | Highlights |
+|------|------|-----------|
+| API (FastAPI) | `apps/api` | Retrieval, KG, signals, admin, signing, gates |
+| Web (Next.js App Router) | `apps/web` | Investor UI, dashboards, market map, static export mode |
+| Flows / Pipelines | `flows` & `pipelines/ingest` | Prefect / batch ingestion & compute steps |
+| Agents / Temporal | `agents/temporal` | Memo agent & workflow scaffolding |
+| Models / Prompts | `models/prompts` | Prompt templates, eval harness |
+| Docs | `docs` | Architecture, PRD, phase specs, observability, acceptance |
+| Tests | `tests` | Phase acceptance, KG pagination/time-travel, admin CRUD |
+
+Architecture diagrams & deeper rationale: see `docs/architecture.md` and `docs/PRD.md`.
+
+---
+
+## 🗺 Key UI Pages
+
+| Page | Purpose | Notes |
+|------|---------|-------|
+| `/market-map` | Realtime company + segment graph | Client-only heavy graph (Cytoscape) extracted to `page_client.tsx` |
+| `/alerts` | Signal & anomaly surfacing | Evidence hover tooltips |
+| `/deals` | Deal candidates & memo gen | PDF export + narrative citations |
+| `/forecast` | Forecast & simulation | SMAPE/MAE gating in CI |
+| `/people` | People / talent graph | Graph helpers endpoints |
+| `/investors` | Investor profile & syndication | Upstream graph traversal |
+| `/trends` | Topic trend explorer | Time-series snapshots |
+| `/kg` | Knowledge graph explorer | Time-travel queries (Phase 6) |
+| `/compare` | Side-by-side company compare | Strict field-level citations |
+| `/dashboard` | Company KPIs + insights | Copilot style explanations |
+
+---
+
+## 🎬 Demo Walkthrough (Suggested Flow ~8m)
+1. Market Overview → `/market-map` (filter segment + min signal, export JSON)
+2. Alerts triage → `/alerts` (inspect evidence)
+3. Deal room workflow → `/deals` (Generate Memo → Export PDF)
+4. Trend deep dive → `/trends` (topic sparkline & backtest)
+5. KG exploration → `/kg` (time-travel node view)
+
+Artifacts: `market_export.json`, `memo.pdf`, optional alerts screenshot.
 ## Phase 0 MVP (North-Star)
 
-## Quick start (local)
-Prefect flows exist in `pipelines/ingest` and wrappers in `flows/`.
-- Ingest: `flows/ingest_rss.py`, `flows/ingest_github.py`, `flows/ingest_edgar.py` (uses `pipelines/ingest/*_flow.py`)
-- Upserts: `flows/upsert_postgres.py` into SQLModel tables (NewsItem, Filing, Repo)
-- Weekly compute: `flows/compute_weekly.py` persists `SignalSnapshot` and `Alert`
-- Orchestration entrypoint: `flows/schedule_weekly.py` to ingest then compute
-2. Copy `.env.example` to `.env` and fill minimal secrets.
-3. docker compose up -d
-4. Open UI at http://localhost:3000 and API at http://localhost:8000/docs
+## 🚀 Quick Start (Local Dev)
+```bash
+# 1. Python env
+python -m venv .venv && source .venv/bin/activate
+pip install -e .  # or: pip install -r requirements.txt
 
-## AURORA-Lite Phase 2 (Acceptance Overview)
+# 2. Node / Web
+pnpm install
 
-This repo implements Phase 2 milestones M1–M10. Highlights: strict JSON contracts, enforced citations, hybrid retrieval, topic trends, market graph, local-first persistence, observability, eval gates, ETag caching, and ISR.
-$env:PYTHONUTF8=1; $env:PYTHONIOENCODING='utf-8'; .\.venv\Scripts\python.exe -m uvicorn main:app --app-dir apps/api --host 127.0.0.1 --port 8000 --reload
+# 3. Env
+cp .env.local.example .env   # fill DEV_ADMIN_TOKEN (optional) etc.
+
+# 4. Services (optional for richer features)
+docker compose -f infra/docker-compose.yml up -d postgres meilisearch qdrant
+
+# 5. Migrate & seed (optional)
+alembic upgrade head
+python scripts/seed_demo_data.py
+
+# 6. Run API & Web (or use VS Code tasks)
+uvicorn apps.api.aurora.main:app --reload --host 0.0.0.0 --port 8000 &
+pnpm --filter aurora-web dev
+```
+Visit: `http://localhost:3000` (web) and `http://localhost:8000/docs` (API docs)
+
+### Prefect / Flows
+```
+flows/ingest_rss.py
+flows/ingest_github.py
+flows/ingest_edgar.py
+flows/compute_weekly.py
+flows/schedule_weekly.py
+```
+Run selective ingestion or end‑to‑end schedule for weekly recompute.
+
+## ✅ Acceptance (Phase 2 Snapshot)
+
+Strict JSON + citations, hybrid retrieval, topic trends, market graph, local-first persistence, observability, eval gates, ETag caching, ISR proxy route.
 Quickstart:
 
 1) Create and activate a Python 3.11 venv
@@ -48,15 +125,20 @@ Quickstart:
 6) Optional: apply DB migrations with Alembic: `alembic upgrade head`
 7) Optional: seed demo data for /compare: `python scripts/seed_demo_data.py` (or use VS Code task "DB: seed demo data")
 
-Key endpoints:
-- POST /copilot/ask
-- POST /compare
-- GET /company/{id}/dashboard
-- GET /trends/top, GET /trends/{topic_id}
- - GET /graph/ego/{company_id}
- - POST /dev/index-local (guarded by DEV_ADMIN_TOKEN)
- - Tools: /tools/retrieve_docs, /tools/company_lookup, /tools/compare_companies (supports window), /tools/trend_snapshot, /tools/detect_entities
- - GET /kg/graphql — GraphQL schema (mounted when strawberry is available); fallback endpoint returns a descriptive JSON when disabled
+### Key Endpoints (Representative)
+```
+POST /copilot/ask
+POST /compare
+GET  /company/{id}/dashboard
+GET  /trends/top
+GET  /trends/{topic_id}
+GET  /graph/ego/{company_id}
+POST /dev/index-local            (admin)
+GET  /kg/graphql                 (if enabled)
+GET  /kg/node/{uid}
+GET  /kg/find
+GET  /kg/edges
+```
 
 All responses include sources[] and strict schemas.
 
@@ -64,37 +146,32 @@ All responses include sources[] and strict schemas.
 - DEV_ADMIN_TOKEN: set in environment or in `apps.api.aurora.config.settings.dev_admin_token`. Pass as `?token=...` or via header `X-Dev-Token: ...` (both accepted uniformly). If unset, admin/dev endpoints return 404.
 - API keys: disabled by default. To require keys for insights-only surfaces, set `APIKEY_REQUIRED=1`. Header name defaults to `X-API-Key` (configurable via `apikey_header_name`). Public endpoints like `/healthz`, `/metrics`, and `/dev/metrics` remain accessible.
 
-UI pages (Next.js):
-- /market-map — Market graph from API
-- /trends — Trend Explorer (topics + series)
-- /compare — Side-by-side compare with narrative + citations
-- /dashboard — Company dashboard with “Explain this chart” calling insights
+*(See UI Pages table above.)*
 
-Acceptance checklist (Phase 2):
-- [x] M1: Research Copilot v2 — strict JSON, citations enforced, hybrid retrieval
-- [x] M2: Dashboard + Trends contracts — KPIs, sparklines, topic series
-- [x] M3: Signals/Alerts — signal series and alert endpoints
-- [x] M4: Topics — BERTopic-gated pipeline, periodic refit, persist Topic/TopicTrend
-- [x] M5: Schedules — DB-backed JobSchedule; list/cancel/status
-- [x] M6: Field-level citations — compare narrative with inline [source: ...]
-- [x] M7: Graph helpers — ego/similar/investors/talent and market map API
-- [x] M8: Feeds + quality — URL-hash dedup, optional LSH, language/timestamp checks
-- [x] M9: Evals — baseline summary and artifact endpoint; CI guard tests
-- [x] M10: UX/perf — ETag caching, ISR proxy route, client ETag-aware fetch
+### Phase 2 Checklist
+| Milestone | Summary |
+|-----------|---------|
+| M1 | Research Copilot v2 (strict JSON + citations + hybrid retrieval) |
+| M2 | Dashboard + Trends contracts |
+| M3 | Signals / Alerts |
+| M4 | Topic modeling + periodic refit |
+| M5 | Schedules (DB-backed) |
+| M6 | Field-level citations (inline sources) |
+| M7 | Graph helpers (ego / investors / talent / market) |
+| M8 | Feed quality & dedup (hash, LSH) |
+| M9 | Evals & CI guard tests |
+| M10 | Perf: ETag caching + ISR proxy |
 
 See docs/ACCEPTANCE.md for how to verify each milestone locally.
-## Monorepo layout
-See docs/PRD.md for detailed requirements and docs/architecture.md for diagrams.
-For optional tooling and extras (e.g., pandas for indexing scripts), see `docs/DEV-EXTRAS.md`.
-- See docs/TESTING.md for quick local testing instructions, including running KG tests with SQLite.
-	- Quick-start external services: see docs/TESTING.md → "Quick-start external services (optional)" for running Postgres/Meilisearch/Qdrant locally and enabling skipped tests.
+## 🗂 Layout Reference
+See `docs/PRD.md`, `docs/architecture.md`, and `docs/DEV-EXTRAS.md` for deep dives. `docs/TESTING.md` explains selective / KG tests.
 
-## License
-MIT
+## 📄 License
+MIT (see `LICENSE`).
 
 ---
 
-## Phase 3 additions (quick reference)
+## Phase 3 Additions (Quick Reference)
 
 - Observability
 	- GET /dev/metrics — request_count, avg, p50/p95/p99, errors{count,rate}, cache stats
@@ -162,7 +239,7 @@ Notes
 - For slow queries, consider adding simple spans around DB calls and increase cache TTLs for market queries (`_cache_set` in API). See docs/RUNBOOKS.md.
 See also docs/OBSERVABILITY.md for example outputs and how to read them.
 
-## Monitoring (/metrics quickstart)
+## 📊 Monitoring (/metrics quickstart)
 
 The API exposes Prometheus-style metrics at `/metrics` and JSON diagnostics at `/dev/metrics`.
 
@@ -199,7 +276,7 @@ Cache TTL Tunables
 - Metric: `aurora_webhook_queue_depth` in `/metrics`.
 - If SQLModel/DB is available, webhook deliveries are queued in table `webhook_queue` for durability; otherwise an in-memory queue is used.
 
-## Phase 4 additions (quick reference)
+## Phase 4 Additions (Quick Reference)
 
 Monetization & quotas
 - Public catalog: `GET /plans`
@@ -261,7 +338,7 @@ Migrations
 Panels include request totals, error rate, latency p50/p95/p99, webhook queue depth, marketplace/orders gauges, cache hit ratio, and usage units by product.
 
 
-## Phase 5 — Sovereign Platform (quick reference)
+## Phase 5 — Sovereign Platform (Quick Reference)
 
 Endpoints (admin endpoints require DEV_ADMIN_TOKEN):
 - KG & Provenance: POST /kg/query, POST /admin/kg/snapshot, GET /provenance/bundle, GET /daas/kg/changed
@@ -397,7 +474,7 @@ CI smokes
 - Workflow: .github/workflows/kg_smokes.yml runs KG smokes on PRs and pushes.
 - To enable full end-to-end seeding during CI, set a repository secret `DEV_ADMIN_TOKEN`. Without it, smokes run in skip-safe mode and exit successfully without side effects.
 
-### Phase 6 quickstart (local)
+### Phase 6 Quickstart (Local)
 
 Admin and signing envs (for snapshot flows):
 
@@ -433,4 +510,75 @@ curl -s http://127.0.0.1:8000/metrics | grep kg_snapshot
 ```
 
 Spec alignment: see `specs/kg_plus_v2_openapi.yaml` for response fields including `merkle_root`.
+
+---
+
+## 🧱 Static Export Mode (Next.js)
+Aurora‑Lite supports a static export for the web surface when `STATIC_EXPORT=1`:
+
+| Aspect | Behavior |
+|--------|----------|
+| Env flag | `STATIC_EXPORT=1` triggers `output: 'export'` in `next.config.js` |
+| Heavy pages | Large interactive pages (`market-map`, `kg`, `explorer`, `trends`, `dashboard`) split into `page.tsx` (server wrapper) + `page_client.tsx` (client, `ssr:false`) |
+| Dynamic segments | Minimal `generateStaticParams` returning sample IDs for `/companies/[id]`, `/dossier/[id]`, `/memo/[id]` |
+| Preflight | `apps/web/scripts/static-preflight.js` emits advisory warnings (does not fail build) |
+| API relocation | `app/api` temporarily moved out during export to prevent route conflicts |
+
+Build (root):
+```bash
+pnpm build:static
+```
+Resulting static output is in `apps/web/out` (standard Next export artifact).
+
+---
+
+## 🤖 Retrieval & KG Snapshot Integrity
+Time‑travel KG endpoints + optional signing (HMAC or Sigstore) produce tamper‑evident snapshots. See Phase 5 & 6 sections and `docs/PHASE6_SOVEREIGN_ECOSYSTEM.md`.
+
+---
+
+## 🧪 Testing & Gates
+| Type | Location | Purpose |
+|------|----------|---------|
+| Unit / API | `tests/` | Contract & regression coverage |
+| KG pagination/time travel | `tests/test_phase6_*` | Sovereign ecosystem behaviors |
+| CI Gates | `scripts/ci_gates.py` | Perf / forecast / errors / retrieval / market |
+| RAG Golden Set | `tests/rag_golden_set.json` | Source integrity checks |
+
+Run all tests:
+```bash
+pytest -q
+```
+
+---
+
+## 🙌 Contributing
+1. Fork & branch (`feat/<name>` or `fix/<name>`)
+2. Add / update tests for behavior changes
+3. Run smokes & gates locally
+4. Open PR with concise description & phase impact (if any)
+
+### Suggested Checks Before PR
+```bash
+pytest -q
+pnpm --filter aurora-web build
+python scripts/ci_gates.py  # ensure gates pass or explain deviations
+```
+
+---
+
+## 🔐 Security
+No formal disclosure program yet. If you discover a vulnerability:
+1. Avoid opening a public issue with exploit details.
+2. Email the maintainer (add contact here) or open a minimal private report.
+3. Provide reproduction steps & potential impact.
+
+---
+
+## 📣 Attribution & Inspiration
+Leverages open tooling: FastAPI, Pydantic, Next.js, Qdrant, Meilisearch, Cytoscape, Prometheus, Grafana. Structured phase approach inspired by production readiness playbooks (observability first, then sovereignty & compliance overlays).
+
+---
+
+> Final README revision: aligned with static export changes, market-map client extraction, Phase 6 endpoints, and unified quick start.
 
