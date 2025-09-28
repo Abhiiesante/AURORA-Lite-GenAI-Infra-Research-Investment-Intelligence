@@ -53,7 +53,7 @@ export default function DossierClient(){
           </div>
             <div>
               <h1 className="dossier-header-title" style={{ fontSize: 40, color: "var(--dossier-accent)", margin: 0 }}>{company?.thesis || "Company Thesis"}</h1>
-              <p style={{ marginTop: 6, opacity: 0.9 }}>Managed vector index for real-time retrieval. <a href="#" aria-label="view source">[source]</a></p>
+              {company?.tagline && <p style={{ marginTop: 6, opacity: 0.9 }}>{company.tagline}</p>}
               <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                 <div className="glass" style={{ padding: "6px 10px", borderRadius: 999 }}>Signal: <b>{company?.signalScore ?? "–"}</b></div>
                 <div className="glass" style={{ padding: "6px 10px", borderRadius: 999 }}>Momentum: <b>↑</b></div>
@@ -73,11 +73,15 @@ export default function DossierClient(){
           <div className="col">
             <article className="dossier-glass" style={{ padding: 16 }}>
               <h2 style={{ fontSize: 16, margin: 0 }}>Narrative</h2>
-              <ul style={{ marginTop: 8 }}>
-                <li>What they do — Vector DB for production RAG. <a href="#">[source]</a></li>
-                <li>Why it matters — infra for AI apps. <a href="#">[source]</a></li>
-                <li>Primary risk — platform competition. <a href="#">[source]</a></li>
-              </ul>
+              <div style={{ marginTop: 8 }}>
+                {Array.isArray(company?.narrative?.bullets) && company.narrative.bullets.length ? (
+                  <ul>
+                    {company.narrative.bullets.map((b: any, i: number)=> (
+                      <li key={b.id || i}>{b.text}{b.sources?.[0]?.url && <> <a href={b.sources[0].url} target="_blank" rel="noreferrer">[source]</a></>}</li>
+                    ))}
+                  </ul>
+                ) : <em style={{ opacity: 0.7 }}>No narrative data</em>}
+              </div>
             </article>
             <article className="dossier-glass" style={{ padding: 16 }}>
               <h2 style={{ fontSize: 16, margin: 0 }}>Time Series</h2>

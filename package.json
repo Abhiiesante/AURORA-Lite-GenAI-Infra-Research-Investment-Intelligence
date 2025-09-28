@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "pnpm --filter aurora-web dev",
     "build": "pnpm -r build",
-  "build:static": "cd apps/web && rm -rf app_api_tmp && if [ -d app/api ]; then mv app/api app_api_tmp; fi && STATIC_EXPORT=1 node scripts/prepare-static-export.js && STATIC_EXPORT=1 pnpm build && STATIC_EXPORT=1 pnpm exec next export && if [ -d app_api_tmp ]; then mv app_api_tmp app/api; fi",
+  "build:static": "cd apps/web && node scripts/static-preflight.js && rm -rf app_api_tmp && if [ -d app/api ]; then mv app/api app_api_tmp; fi && STATIC_EXPORT=1 node scripts/prepare-static-export.js && STATIC_EXPORT=1 pnpm build && STATIC_EXPORT=1 pnpm exec next export && if [ -d app_api_tmp ]; then mv app_api_tmp app/api; fi",
     "lint": "pnpm -r lint"
   },
   "devDependencies": {
