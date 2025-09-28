@@ -6,7 +6,10 @@ import CommandKOverlay from "@/components/CommandKOverlay";
 type Props = { children?: any };
 
 export const metadata = { title: "AURORA-Lite" };
-export const dynamic = "force-dynamic";
+// When performing a static export (STATIC_EXPORT=1) we must not force dynamic rendering
+// or Next.js will bail out with NEXT_STATIC_GEN_BAILOUT errors. Default to force-dynamic
+// for normal SSR builds to preserve existing behaviour.
+export const dynamic = process.env.STATIC_EXPORT ? "auto" : "force-dynamic";
 export default function RootLayout({ children }: Props) {
   return (
     <html lang="en">

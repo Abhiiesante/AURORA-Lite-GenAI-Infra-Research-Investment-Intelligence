@@ -1,7 +1,5 @@
 name: Deploy Next.js SSR (aurora-web)
-
-# NOTE: Using unquoted 'on' (GitHub Actions treats it correctly); some YAML 1.1 parsers may coerce it to boolean, which is harmless here.
-"on":
+'on':
   push:
     branches: [main]
     paths:
@@ -10,7 +8,6 @@ name: Deploy Next.js SSR (aurora-web)
       - pnpm-lock.yaml
   workflow_dispatch:
 
-# Prevent overlapping builds on the same ref; cancel stale ones
 concurrency:
   group: aurora-web-ssr-${{ github.ref }}
   cancel-in-progress: true
@@ -20,17 +17,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: 9.7.0
           run_install: false
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
@@ -77,7 +71,6 @@ jobs:
             package.json
             pnpm-lock.yaml
 
-  # Placeholder for deploy job (adapt to chosen hosting platform)
   # deploy:
   #   needs: build-ssr
   #   runs-on: ubuntu-latest

@@ -1,5 +1,6 @@
 "use client";
-export const dynamic = "force-dynamic";
+// Conditional dynamic rendering: static export uses auto to avoid bailout.
+export const dynamic = process.env.STATIC_EXPORT ? "auto" : "force-dynamic";
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 

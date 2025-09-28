@@ -1,5 +1,6 @@
 "use client";
-export const dynamic = "force-dynamic";
+// Allow static generation during STATIC_EXPORT builds; otherwise force dynamic.
+export const dynamic = process.env.STATIC_EXPORT ? "auto" : "force-dynamic";
 import dyn from "next/dynamic";
 import { useEffect, useState } from "react";
 import axios from "axios";

@@ -1,5 +1,5 @@
 "use client";
-export const dynamic = "force-dynamic";
+export const dynamic = process.env.STATIC_EXPORT ? "auto" : "force-dynamic";
 import axios from "axios";
 import { useState } from "react";
 

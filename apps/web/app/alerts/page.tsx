@@ -1,5 +1,6 @@
 "use client";
-export const dynamic = "force-dynamic";
+// Allow static export by disabling force-dynamic when STATIC_EXPORT=1
+export const dynamic = process.env.STATIC_EXPORT ? "auto" : "force-dynamic";
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 

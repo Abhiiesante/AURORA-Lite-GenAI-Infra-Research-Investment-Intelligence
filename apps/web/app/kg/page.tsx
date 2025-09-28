@@ -1,5 +1,7 @@
 "use client";
-export const dynamic = "force-dynamic";
+// In normal runtime we force dynamic rendering, but for static export (GitHub Pages)
+// we let Next attempt static generation by switching to auto.
+export const dynamic = process.env.STATIC_EXPORT ? "auto" : "force-dynamic";
 import React, { useMemo, useState } from "react";
 import axios from "axios";
 
