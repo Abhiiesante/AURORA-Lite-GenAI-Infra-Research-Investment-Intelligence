@@ -1,37 +1,74 @@
 name: Deploy Next.js SSR (aurora-web)
 
-on:
-  workflow_dispatch:
+# NOTE: Using unquoted 'on' (GitHub Actions treats it correctly); some YAML 1.1 parsers may coerce it to boolean, which is harmless here.
+"on":
   push:
-    branches: ["main"]
+    branches: [main]
     paths:
-      - "apps/web/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
+      - apps/web/**
+      - package.json
+      - pnpm-lock.yaml
+  workflow_dispatch:
+
+# Prevent overlapping builds on the same ref; cancel stale ones
+concurrency:
+  group: aurora-web-ssr-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-ssr:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 9.7.0
           run_install: false
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
-      - name: Install deps
+          cache: pnpm
+
+      - name: Derive pnpm store path
+        id: pnpm-store
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
       - name: Build (SSR)
         run: pnpm --filter aurora-web build
-      - name: Upload .next artifact
+
+      - name: Upload .next build artifact
         uses: actions/upload-artifact@v4
         with:
           name: aurora-web-next
           path: apps/web/.next
-      - name: Upload package.json
+          retention-days: 5
+
+      - name: Upload Next.js incremental cache (optional)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurora-web-next-cache
+          path: apps/web/.next/cache
+          retention-days: 3
+
+      - name: Upload package manifests
         uses: actions/upload-artifact@v4
         with:
           name: aurora-web-package
@@ -40,10 +77,14 @@ jobs:
             package.json
             pnpm-lock.yaml
 
-  # Deployment staging placeholder (user can adapt to chosen platform)
+  # Placeholder for deploy job (adapt to chosen hosting platform)
   # deploy:
   #   needs: build-ssr
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - name: TODO deploy to chosen host
-  #       run: echo "Integrate with Render/Fly/Vercel/etc."
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: aurora-web-next
+  #         path: .next
+  #     - name: Deploy
+  #       run: echo "Integrate deployment (e.g. rsync/scp/vercel CLI) here"
